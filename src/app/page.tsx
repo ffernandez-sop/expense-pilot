@@ -1,3 +1,5 @@
+import { ExpenseDashboard } from "@/components/expense-dashboard";
+
 export default function Home() {
-  return <></>;
+  return <ExpenseDashboard />;
 }

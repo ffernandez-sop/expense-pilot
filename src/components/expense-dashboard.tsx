@@ -130,9 +130,14 @@ const incomeFormSchema = z.object({
 export function ExpenseDashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
-  const [filterCategory, setFilterCategory] = useState<Category["value"] | "all">("all");
-  const [filterYear, setFilterYear] = useState<string>("all");
-  const [filterMonth, setFilterMonth] = useState<string>("all");
+  
+  const [expenseFilterCategory, setExpenseFilterCategory] = useState<Category["value"] | "all">("all");
+  const [expenseFilterYear, setExpenseFilterYear] = useState<string>("all");
+  const [expenseFilterMonth, setExpenseFilterMonth] = useState<string>("all");
+
+  const [incomeFilterYear, setIncomeFilterYear] = useState<string>("all");
+  const [incomeFilterMonth, setIncomeFilterMonth] = useState<string>("all");
+  
   const { toast } = useToast();
 
   const [expenseSheetOpen, setExpenseSheetOpen] = useState(false);
@@ -249,11 +254,21 @@ export function ExpenseDashboard() {
   const totalExpenses = useMemo(() => expenses.reduce((sum, expense) => sum + expense.amount, 0), [expenses]);
   const totalIncome = useMemo(() => incomes.reduce((sum, income) => sum + income.amount, 0), [incomes]);
   const balance = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
+  
+  const expenseYears = useMemo(() => {
+    if (expenses.length === 0) return ["all"];
+    const years = Array.from(new Set(expenses.map(e => e.date.getFullYear().toString()))).sort((a,b) => parseInt(b) - parseInt(a));
+    return ["all", ...years];
+  }, [expenses]);
 
   const filteredExpenses = useMemo(() => {
-    if (filterCategory === "all") return expenses;
-    return expenses.filter(expense => expense.category === filterCategory);
-  }, [expenses, filterCategory]);
+    return expenses.filter(expense => {
+      const categoryMatch = expenseFilterCategory === "all" || expense.category === expenseFilterCategory;
+      const yearMatch = expenseFilterYear === "all" || expense.date.getFullYear().toString() === expenseFilterYear;
+      const monthMatch = expenseFilterMonth === "all" || expense.date.getMonth().toString() === expenseFilterMonth;
+      return categoryMatch && yearMatch && monthMatch;
+    });
+  }, [expenses, expenseFilterCategory, expenseFilterYear, expenseFilterMonth]);
 
   const incomeYears = useMemo(() => {
     if (incomes.length === 0) return ["all"];
@@ -263,11 +278,11 @@ export function ExpenseDashboard() {
 
   const filteredIncomes = useMemo(() => {
       return incomes.filter(income => {
-          const yearMatch = filterYear === "all" || income.date.getFullYear().toString() === filterYear;
-          const monthMatch = filterMonth === "all" || income.date.getMonth().toString() === filterMonth;
+          const yearMatch = incomeFilterYear === "all" || income.date.getFullYear().toString() === incomeFilterYear;
+          const monthMatch = incomeFilterMonth === "all" || income.date.getMonth().toString() === incomeFilterMonth;
           return yearMatch && monthMatch;
       });
-  }, [incomes, filterYear, filterMonth]);
+  }, [incomes, incomeFilterYear, incomeFilterMonth]);
 
   const chartData = useMemo(() => {
     return categories.map(category => ({
@@ -605,17 +620,39 @@ export function ExpenseDashboard() {
                 <CardTitle className="font-headline">Gastos Recientes</CardTitle>
                 <div className="flex items-center gap-2">
                 <CardDescription>Vea y gestione sus transacciones recientes.</CardDescription>
-                <Select value={filterCategory} onValueChange={(value) => setFilterCategory(value as Category["value"] | "all")}>
-                    <SelectTrigger className="w-auto h-8 ml-auto">
-                    <SelectValue placeholder="Filtrar por categoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    <SelectItem value="all">Todas las Categorías</SelectItem>
-                    {categories.map(cat => (
-                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2 ml-auto">
+                    <Select value={expenseFilterYear} onValueChange={setExpenseFilterYear}>
+                        <SelectTrigger className="w-auto h-8">
+                            <SelectValue placeholder="Año" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {expenseYears.map(year => (
+                                <SelectItem key={year} value={year}>{year === 'all' ? 'Todos los Años' : year}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={expenseFilterMonth} onValueChange={setExpenseFilterMonth}>
+                        <SelectTrigger className="w-auto h-8">
+                            <SelectValue placeholder="Mes" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {incomeMonths.map(month => (
+                                <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={expenseFilterCategory} onValueChange={(value) => setExpenseFilterCategory(value as Category["value"] | "all")}>
+                        <SelectTrigger className="w-auto h-8">
+                        <SelectValue placeholder="Filtrar por categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="all">Todas las Categorías</SelectItem>
+                        {categories.map(cat => (
+                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                </div>
                 </div>
             </CardHeader>
             <CardContent>
@@ -649,7 +686,7 @@ export function ExpenseDashboard() {
                     })
                     ) : (
                     <TableRow>
-                        <TableCell colSpan={4} className="text-center h-24">No se encontraron gastos.</TableCell>
+                        <TableCell colSpan={4} className="text-center h-24">No se encontraron gastos para el período seleccionado.</TableCell>
                     </TableRow>
                     )}
                 </TableBody>
@@ -662,7 +699,7 @@ export function ExpenseDashboard() {
                     <div className="flex items-center gap-2">
                         <CardDescription>Filtre sus ingresos por mes y año.</CardDescription>
                         <div className="flex items-center gap-2 ml-auto">
-                            <Select value={filterYear} onValueChange={setFilterYear}>
+                            <Select value={incomeFilterYear} onValueChange={setIncomeFilterYear}>
                                 <SelectTrigger className="w-auto h-8">
                                     <SelectValue placeholder="Año" />
                                 </SelectTrigger>
@@ -672,7 +709,7 @@ export function ExpenseDashboard() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Select value={filterMonth} onValueChange={setFilterMonth}>
+                            <Select value={incomeFilterMonth} onValueChange={setIncomeFilterMonth}>
                                 <SelectTrigger className="w-auto h-8">
                                     <SelectValue placeholder="Mes" />
                                 </SelectTrigger>

@@ -91,6 +91,22 @@ const categories: Category[] = [
   { value: "Other", label: "Other", icon: CircleDollarSign },
 ];
 
+const incomeMonths = [
+    { value: "all", label: "All Months" },
+    { value: "0", label: "January" },
+    { value: "1", label: "February" },
+    { value: "2", label: "March" },
+    { value: "3", label: "April" },
+    { value: "4", label: "May" },
+    { value: "5", label: "June" },
+    { value: "6", label: "July" },
+    { value: "7", label: "August" },
+    { value: "8", label: "September" },
+    { value: "9", label: "October" },
+    { value: "10", label: "November" },
+    { value: "11", label: "December" },
+];
+
 const expenseFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   category: z.enum(categories.map(c => c.value) as [string, ...string[]], {
@@ -114,6 +130,8 @@ export function ExpenseDashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [filterCategory, setFilterCategory] = useState<Category["value"] | "all">("all");
+  const [filterYear, setFilterYear] = useState<string>("all");
+  const [filterMonth, setFilterMonth] = useState<string>("all");
   const { toast } = useToast();
 
   const [expenseSheetOpen, setExpenseSheetOpen] = useState(false);
@@ -194,6 +212,7 @@ export function ExpenseDashboard() {
 
       const mockIncomes: Income[] = [
         { id: "income-1", source: "Salary", amount: 5000, date: new Date(2024, 5, 1) },
+        { id: "income-2", source: "Freelance", amount: 750, date: new Date(2024, 4, 15) },
       ];
       setIncomes(mockIncomes);
   }, []);
@@ -234,6 +253,20 @@ export function ExpenseDashboard() {
     if (filterCategory === "all") return expenses;
     return expenses.filter(expense => expense.category === filterCategory);
   }, [expenses, filterCategory]);
+
+  const incomeYears = useMemo(() => {
+    if (incomes.length === 0) return ["all"];
+    const years = Array.from(new Set(incomes.map(i => i.date.getFullYear().toString()))).sort((a,b) => parseInt(b) - parseInt(a));
+    return ["all", ...years];
+  }, [incomes]);
+
+  const filteredIncomes = useMemo(() => {
+      return incomes.filter(income => {
+          const yearMatch = filterYear === "all" || income.date.getFullYear().toString() === filterYear;
+          const monthMatch = filterMonth === "all" || income.date.getMonth().toString() === filterMonth;
+          return yearMatch && monthMatch;
+      });
+  }, [incomes, filterYear, filterMonth]);
 
   const chartData = useMemo(() => {
     return categories.map(category => ({
@@ -563,61 +596,121 @@ export function ExpenseDashboard() {
           </Card>
           <AIInsights expenses={expenses} income={totalIncome} />
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Recent Expenses</CardTitle>
-            <div className="flex items-center gap-2">
-              <CardDescription>View and manage your recent transactions.</CardDescription>
-               <Select value={filterCategory} onValueChange={(value) => setFilterCategory(value as Category["value"] | "all")}>
-                <SelectTrigger className="w-auto h-8 ml-auto">
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="hidden md:table-cell">Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredExpenses.length > 0 ? (
-                  filteredExpenses.map(expense => {
-                    const CategoryIcon = categories.find(c => c.value === expense.category)?.icon || CircleDollarSign;
-                    return (
-                      <TableRow key={expense.id}>
-                        <TableCell className="font-medium">{expense.name}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <CategoryIcon className="h-4 w-4 text-muted-foreground" />
-                            {expense.category}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">${expense.amount.toFixed(2)}</TableCell>
-                        <TableCell className="hidden md:table-cell">{format(expense.date, 'PPP')}</TableCell>
-                      </TableRow>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24">No expenses found.</TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+            <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Recent Expenses</CardTitle>
+                <div className="flex items-center gap-2">
+                <CardDescription>View and manage your recent transactions.</CardDescription>
+                <Select value={filterCategory} onValueChange={(value) => setFilterCategory(value as Category["value"] | "all")}>
+                    <SelectTrigger className="w-auto h-8 ml-auto">
+                    <SelectValue placeholder="Filter by category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map(cat => (
+                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="hidden md:table-cell">Date</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {filteredExpenses.length > 0 ? (
+                    filteredExpenses.map(expense => {
+                        const CategoryIcon = categories.find(c => c.value === expense.category)?.icon || CircleDollarSign;
+                        return (
+                        <TableRow key={expense.id}>
+                            <TableCell className="font-medium">{expense.name}</TableCell>
+                            <TableCell>
+                            <div className="flex items-center gap-2">
+                                <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+                                {expense.category}
+                            </div>
+                            </TableCell>
+                            <TableCell className="text-right">${expense.amount.toFixed(2)}</TableCell>
+                            <TableCell className="hidden md:table-cell">{format(expense.date, 'PPP')}</TableCell>
+                        </TableRow>
+                        );
+                    })
+                    ) : (
+                    <TableRow>
+                        <TableCell colSpan={4} className="text-center h-24">No expenses found.</TableCell>
+                    </TableRow>
+                    )}
+                </TableBody>
+                </Table>
+            </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Income History</CardTitle>
+                    <div className="flex items-center gap-2">
+                        <CardDescription>Filter your income by month and year.</CardDescription>
+                        <div className="flex items-center gap-2 ml-auto">
+                            <Select value={filterYear} onValueChange={setFilterYear}>
+                                <SelectTrigger className="w-auto h-8">
+                                    <SelectValue placeholder="Year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {incomeYears.map(year => (
+                                        <SelectItem key={year} value={year}>{year === 'all' ? 'All Years' : year}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select value={filterMonth} onValueChange={setFilterMonth}>
+                                <SelectTrigger className="w-auto h-8">
+                                    <SelectValue placeholder="Month" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {incomeMonths.map(month => (
+                                        <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead>Source</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead className="hidden md:table-cell">Date</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredIncomes.length > 0 ? (
+                        filteredIncomes.map(income => {
+                            return (
+                            <TableRow key={income.id}>
+                                <TableCell className="font-medium">{income.source}</TableCell>
+                                <TableCell className="text-right">${income.amount.toFixed(2)}</TableCell>
+                                <TableCell className="hidden md:table-cell">{format(income.date, 'PPP')}</TableCell>
+                            </TableRow>
+                            );
+                        })
+                        ) : (
+                        <TableRow>
+                            <TableCell colSpan={3} className="text-center h-24">No income found for the selected period.</TableCell>
+                        </TableRow>
+                        )}
+                    </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
       </main>
     </div>
   );

@@ -1,9 +1,11 @@
 import type { LucideIcon } from "lucide-react";
 
+
+
 export type Expense = {
   id: string;
   name: string;
-  category: "Food" | "Transport" | "Rent" | "Utilities" | "Entertainment" | "Other";
+  category: "Food" | "Transport" | "Rent" | "Utilities" | "Entertainment" | "Other"| string ;
   amount: number;
   date: Date;
 };

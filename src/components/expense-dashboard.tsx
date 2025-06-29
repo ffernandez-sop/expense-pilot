@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell } from "recharts";
 import { format } from "date-fns";
+import { es } from 'date-fns/locale';
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -83,46 +84,46 @@ import { autoCategorizeExpense } from "@/ai/flows/categorize-expense";
 import { getPersonalizedExpenseRecommendations } from "@/ai/flows/personalized-recommendations";
 
 const categories: Category[] = [
-  { value: "Food", label: "Food", icon: Utensils },
-  { value: "Transport", label: "Transport", icon: Car },
-  { value: "Rent", label: "Rent", icon: Home },
-  { value: "Utilities", label: "Utilities", icon: Bolt },
-  { value: "Entertainment", label: "Entertainment", icon: Film },
-  { value: "Other", label: "Other", icon: CircleDollarSign },
+  { value: "Food", label: "Comida", icon: Utensils },
+  { value: "Transport", label: "Transporte", icon: Car },
+  { value: "Rent", label: "Alquiler", icon: Home },
+  { value: "Utilities", label: "Servicios", icon: Bolt },
+  { value: "Entertainment", label: "Entretenimiento", icon: Film },
+  { value: "Other", label: "Otro", icon: CircleDollarSign },
 ];
 
 const incomeMonths = [
-    { value: "all", label: "All Months" },
-    { value: "0", label: "January" },
-    { value: "1", label: "February" },
-    { value: "2", label: "March" },
-    { value: "3", label: "April" },
-    { value: "4", label: "May" },
-    { value: "5", label: "June" },
-    { value: "6", label: "July" },
-    { value: "7", label: "August" },
-    { value: "8", label: "September" },
-    { value: "9", label: "October" },
-    { value: "10", label: "November" },
-    { value: "11", label: "December" },
+    { value: "all", label: "Todos los Meses" },
+    { value: "0", label: "Enero" },
+    { value: "1", label: "Febrero" },
+    { value: "2", label: "Marzo" },
+    { value: "3", label: "Abril" },
+    { value: "4", label: "Mayo" },
+    { value: "5", label: "Junio" },
+    { value: "6", label: "Julio" },
+    { value: "7", label: "Agosto" },
+    { value: "8", label: "Septiembre" },
+    { value: "9", label: "Octubre" },
+    { value: "10", label: "Noviembre" },
+    { value: "11", label: "Diciembre" },
 ];
 
 const expenseFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters."),
+  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
   category: z.enum(categories.map(c => c.value) as [string, ...string[]], {
-    required_error: "Please select a category.",
+    required_error: "Por favor seleccione una categoría.",
   }),
-  amount: z.coerce.number().positive("Amount must be a positive number."),
+  amount: z.coerce.number().positive("El monto debe ser un número positivo."),
   date: z.date({
-    required_error: "A date is required.",
+    required_error: "Se requiere una fecha.",
   }),
 });
 
 const incomeFormSchema = z.object({
-  source: z.string().min(2, "Source must be at least 2 characters."),
-  amount: z.coerce.number().positive("Amount must be a positive number."),
+  source: z.string().min(2, "La fuente debe tener al menos 2 caracteres."),
+  amount: z.coerce.number().positive("El monto debe ser un número positivo."),
   date: z.date({
-    required_error: "A date is required.",
+    required_error: "Se requiere una fecha.",
   }),
 });
 
@@ -162,8 +163,8 @@ export function ExpenseDashboard() {
     if (!description) {
       toast({
         variant: "destructive",
-        title: "Oh no! Something went wrong.",
-        description: "Please enter a description for the expense first.",
+        title: "¡Oh no! Algo salió mal.",
+        description: "Por favor, ingrese una descripción para el gasto primero.",
       });
       return;
     }
@@ -174,22 +175,22 @@ export function ExpenseDashboard() {
       if (validCategory) {
         expenseForm.setValue("category", validCategory.value);
         toast({
-          title: "Success!",
-          description: `Expense categorized as ${result.category} with ${Math.round(result.confidence * 100)}% confidence.`,
+          title: "¡Éxito!",
+          description: `Gasto categorizado como ${result.category} con ${Math.round(result.confidence * 100)}% de confianza.`,
         });
       } else {
         expenseForm.setValue("category", "Other");
          toast({
-          title: "Suggestion: Other",
-          description: `We weren't sure, so we've suggested "Other". The AI suggested "${result.category}".`,
+          title: "Sugerencia: Otro",
+          description: `No estábamos seguros, así que hemos sugerido "Otro". La IA sugirió "${result.category}".`,
         });
       }
     } catch (error) {
       console.error("AI categorization failed:", error);
       toast({
         variant: "destructive",
-        title: "Categorization Failed",
-        description: "The AI could not categorize the expense. Please select a category manually.",
+        title: "Falló la Categorización",
+        description: "La IA no pudo categorizar el gasto. Por favor, seleccione una categoría manualmente.",
       });
     } finally {
       setIsCategorizing(false);
@@ -200,18 +201,18 @@ export function ExpenseDashboard() {
   useEffect(() => {
     // On initial load, create some mock data
     const mockExpenses: Expense[] = [
-        { id: "1", name: "Groceries", category: "Food", amount: 75.50, date: new Date(2024, 5, 2) },
-        { id: "2", name: "Gasoline", category: "Transport", amount: 40.00, date: new Date(2024, 5, 5) },
-        { id: "3", name: "Monthly Rent", category: "Rent", amount: 1200.00, date: new Date(2024, 5, 1) },
-        { id: "4", name: "Electricity Bill", category: "Utilities", amount: 65.20, date: new Date(2024, 5, 10) },
-        { id: "5", name: "Movie Tickets", category: "Entertainment", amount: 25.00, date: new Date(2024, 5, 12) },
-        { id: "6", name: "Dinner Out", category: "Food", amount: 55.00, date: new Date(2024, 5, 15) },
-        { id: "7", name: "Internet Bill", category: "Utilities", amount: 50.00, date: new Date(2024, 5, 20) },
+        { id: "1", name: "Compras", category: "Food", amount: 75.50, date: new Date(2024, 5, 2) },
+        { id: "2", name: "Gasolina", category: "Transport", amount: 40.00, date: new Date(2024, 5, 5) },
+        { id: "3", name: "Alquiler Mensual", category: "Rent", amount: 1200.00, date: new Date(2024, 5, 1) },
+        { id: "4", name: "Factura de Electricidad", category: "Utilities", amount: 65.20, date: new Date(2024, 5, 10) },
+        { id: "5", name: "Entradas de cine", category: "Entertainment", amount: 25.00, date: new Date(2024, 5, 12) },
+        { id: "6", name: "Cena fuera", category: "Food", amount: 55.00, date: new Date(2024, 5, 15) },
+        { id: "7", name: "Factura de Internet", category: "Utilities", amount: 50.00, date: new Date(2024, 5, 20) },
       ];
       setExpenses(mockExpenses);
 
       const mockIncomes: Income[] = [
-        { id: "income-1", source: "Salary", amount: 5000, date: new Date(2024, 5, 1) },
+        { id: "income-1", source: "Salario", amount: 5000, date: new Date(2024, 5, 1) },
         { id: "income-2", source: "Freelance", amount: 750, date: new Date(2024, 4, 15) },
       ];
       setIncomes(mockIncomes);
@@ -224,8 +225,8 @@ export function ExpenseDashboard() {
     };
     setExpenses(prev => [newExpense, ...prev]);
     toast({
-      title: "Expense Added",
-      description: `${values.name} for $${values.amount} has been added.`,
+      title: "Gasto Agregado",
+      description: `${values.name} por $${values.amount} ha sido agregado.`,
     });
     expenseForm.reset();
     setExpenseSheetOpen(false);
@@ -238,8 +239,8 @@ export function ExpenseDashboard() {
     };
     setIncomes(prev => [newIncome, ...prev]);
     toast({
-      title: "Income Added",
-      description: `Income from ${values.source} for $${values.amount} has been added.`,
+      title: "Ingreso Agregado",
+      description: `Ingreso de ${values.source} por $${values.amount} ha sido agregado.`,
     });
     incomeForm.reset({ source: "", amount: undefined, date: new Date() });
     setIncomeSheetOpen(false);
@@ -281,7 +282,7 @@ export function ExpenseDashboard() {
 
   const chartConfig = {
     expenses: {
-      label: "Expenses",
+      label: "Gastos",
     },
     ...Object.fromEntries(categories.map((cat, i) => [cat.value, { label: cat.label, color: chartColors[i % chartColors.length] }]))
   };
@@ -300,16 +301,16 @@ export function ExpenseDashboard() {
             <SheetTrigger asChild>
               <Button size="sm" variant="outline" className="h-8 gap-1">
                 <Plus className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Add Income</span>
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Añadir Ingreso</span>
               </Button>
             </SheetTrigger>
             <SheetContent>
               <Form {...incomeForm}>
                 <form onSubmit={incomeForm.handleSubmit(onIncomeSubmit)} className="flex flex-col h-full">
                   <SheetHeader>
-                    <SheetTitle>Add New Income</SheetTitle>
+                    <SheetTitle>Añadir Nuevo Ingreso</SheetTitle>
                     <SheetDescription>
-                      Fill in the details for your new income source.
+                      Complete los detalles de su nueva fuente de ingresos.
                     </SheetDescription>
                   </SheetHeader>
                   <div className="flex-1 py-4 space-y-4 overflow-y-auto">
@@ -318,9 +319,9 @@ export function ExpenseDashboard() {
                       name="source"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Income Source</FormLabel>
+                          <FormLabel>Fuente de Ingreso</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Salary, Freelance" {...field} />
+                            <Input placeholder="ej. Salario, Freelance" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -331,7 +332,7 @@ export function ExpenseDashboard() {
                       name="amount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Amount</FormLabel>
+                          <FormLabel>Monto</FormLabel>
                           <FormControl>
                             <Input type="number" placeholder="0.00" {...field} />
                           </FormControl>
@@ -344,7 +345,7 @@ export function ExpenseDashboard() {
                       name="date"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel>Date</FormLabel>
+                          <FormLabel>Fecha</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
                               <FormControl>
@@ -356,9 +357,9 @@ export function ExpenseDashboard() {
                                   )}
                                 >
                                   {field.value ? (
-                                    format(field.value, "PPP")
+                                    format(field.value, "PPP", { locale: es })
                                   ) : (
-                                    <span>Pick a date</span>
+                                    <span>Elija una fecha</span>
                                   )}
                                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button>
@@ -373,6 +374,7 @@ export function ExpenseDashboard() {
                                   date > new Date() || date < new Date("1900-01-01")
                                 }
                                 initialFocus
+                                locale={es}
                               />
                             </PopoverContent>
                           </Popover>
@@ -383,9 +385,9 @@ export function ExpenseDashboard() {
                   </div>
                   <SheetFooter>
                     <SheetClose asChild>
-                      <Button variant="outline">Cancel</Button>
+                      <Button variant="outline">Cancelar</Button>
                     </SheetClose>
-                    <Button type="submit">Save Income</Button>
+                    <Button type="submit">Guardar Ingreso</Button>
                   </SheetFooter>
                 </form>
               </Form>
@@ -396,16 +398,16 @@ export function ExpenseDashboard() {
             <SheetTrigger asChild>
               <Button size="sm" className="h-8 gap-1">
                 <Plus className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Add Expense</span>
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Añadir Gasto</span>
               </Button>
             </SheetTrigger>
             <SheetContent>
               <Form {...expenseForm}>
                 <form onSubmit={expenseForm.handleSubmit(onExpenseSubmit)} className="flex flex-col h-full">
                   <SheetHeader>
-                    <SheetTitle>Add a New Expense</SheetTitle>
+                    <SheetTitle>Añadir un Nuevo Gasto</SheetTitle>
                     <SheetDescription>
-                      Fill in the details of your expense. Click save when you&apos;re done.
+                      Complete los detalles de su gasto. Haga clic en guardar cuando haya terminado.
                     </SheetDescription>
                   </SheetHeader>
                   <div className="flex-1 py-4 space-y-4 overflow-y-auto">
@@ -414,9 +416,9 @@ export function ExpenseDashboard() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Expense Name</FormLabel>
+                          <FormLabel>Nombre del Gasto</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Coffee with friends" {...field} />
+                            <Input placeholder="ej. Café con amigos" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -427,12 +429,12 @@ export function ExpenseDashboard() {
                       name="category"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Category</FormLabel>
+                          <FormLabel>Categoría</FormLabel>
                           <div className="flex items-center gap-2">
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select a category" />
+                                <SelectValue placeholder="Seleccione una categoría" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -454,7 +456,7 @@ export function ExpenseDashboard() {
                       name="amount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Amount</FormLabel>
+                          <FormLabel>Monto</FormLabel>
                           <FormControl>
                             <Input type="number" placeholder="0.00" {...field} />
                           </FormControl>
@@ -467,7 +469,7 @@ export function ExpenseDashboard() {
                       name="date"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel>Date</FormLabel>
+                          <FormLabel>Fecha</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
                               <FormControl>
@@ -479,9 +481,9 @@ export function ExpenseDashboard() {
                                   )}
                                 >
                                   {field.value ? (
-                                    format(field.value, "PPP")
+                                    format(field.value, "PPP", { locale: es })
                                   ) : (
-                                    <span>Pick a date</span>
+                                    <span>Elija una fecha</span>
                                   )}
                                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button>
@@ -496,6 +498,7 @@ export function ExpenseDashboard() {
                                   date > new Date() || date < new Date("1900-01-01")
                                 }
                                 initialFocus
+                                locale={es}
                               />
                             </PopoverContent>
                           </Popover>
@@ -506,9 +509,9 @@ export function ExpenseDashboard() {
                   </div>
                   <SheetFooter>
                     <SheetClose asChild>
-                      <Button variant="outline">Cancel</Button>
+                      <Button variant="outline">Cancelar</Button>
                     </SheetClose>
-                    <Button type="submit">Save Expense</Button>
+                    <Button type="submit">Guardar Gasto</Button>
                   </SheetFooter>
                 </form>
               </Form>
@@ -519,12 +522,12 @@ export function ExpenseDashboard() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8 gap-1">
                 <Download className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Export</span>
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Exportar</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => toast({description: "Export to CSV coming soon!"})}>Export to CSV</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast({description: "Export to PDF coming soon!"})}>Export to PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({description: "¡Pronto se podrá exportar a CSV!"})}>Exportar a CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast({description: "¡Pronto se podrá exportar a PDF!"})}>Exportar a PDF</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -535,40 +538,40 @@ export function ExpenseDashboard() {
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+              <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
               <PiggyBank className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-headline">${totalIncome.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              <p className="text-xs text-muted-foreground">Your income for this month</p>
+              <div className="text-2xl font-bold font-headline">${totalIncome.toLocaleString("es-ES", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              <p className="text-xs text-muted-foreground">Sus ingresos para este mes</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+              <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
               <Receipt className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-headline">${totalExpenses.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              <p className="text-xs text-muted-foreground">Your expenses for this month</p>
+              <div className="text-2xl font-bold font-headline">${totalExpenses.toLocaleString("es-ES", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              <p className="text-xs text-muted-foreground">Sus gastos para este mes</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Balance</CardTitle>
+              <CardTitle className="text-sm font-medium">Saldo</CardTitle>
               <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-headline">${balance.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              <p className="text-xs text-muted-foreground">Your remaining balance</p>
+              <div className="text-2xl font-bold font-headline">${balance.toLocaleString("es-ES", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              <p className="text-xs text-muted-foreground">Su saldo restante</p>
             </CardContent>
           </Card>
         </div>
         <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
           <Card className="xl:col-span-2">
             <CardHeader>
-              <CardTitle className="font-headline">Expense Distribution</CardTitle>
-              <CardDescription>A visual breakdown of your spending by category.</CardDescription>
+              <CardTitle className="font-headline">Distribución de Gastos</CardTitle>
+              <CardDescription>Un desglose visual de sus gastos por categoría.</CardDescription>
             </CardHeader>
             <CardContent className="pb-8">
               <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[300px]">
@@ -599,15 +602,15 @@ export function ExpenseDashboard() {
         <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
             <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Recent Expenses</CardTitle>
+                <CardTitle className="font-headline">Gastos Recientes</CardTitle>
                 <div className="flex items-center gap-2">
-                <CardDescription>View and manage your recent transactions.</CardDescription>
+                <CardDescription>Vea y gestione sus transacciones recientes.</CardDescription>
                 <Select value={filterCategory} onValueChange={(value) => setFilterCategory(value as Category["value"] | "all")}>
                     <SelectTrigger className="w-auto h-8 ml-auto">
-                    <SelectValue placeholder="Filter by category" />
+                    <SelectValue placeholder="Filtrar por categoría" />
                     </SelectTrigger>
                     <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="all">Todas las Categorías</SelectItem>
                     {categories.map(cat => (
                         <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                     ))}
@@ -619,33 +622,34 @@ export function ExpenseDashboard() {
                 <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="hidden md:table-cell">Date</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Categoría</TableHead>
+                    <TableHead className="text-right">Monto</TableHead>
+                    <TableHead className="hidden md:table-cell">Fecha</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {filteredExpenses.length > 0 ? (
                     filteredExpenses.map(expense => {
                         const CategoryIcon = categories.find(c => c.value === expense.category)?.icon || CircleDollarSign;
+                        const categoryLabel = categories.find(c => c.value === expense.category)?.label || expense.category;
                         return (
                         <TableRow key={expense.id}>
                             <TableCell className="font-medium">{expense.name}</TableCell>
                             <TableCell>
                             <div className="flex items-center gap-2">
                                 <CategoryIcon className="h-4 w-4 text-muted-foreground" />
-                                {expense.category}
+                                {categoryLabel}
                             </div>
                             </TableCell>
                             <TableCell className="text-right">${expense.amount.toFixed(2)}</TableCell>
-                            <TableCell className="hidden md:table-cell">{format(expense.date, 'PPP')}</TableCell>
+                            <TableCell className="hidden md:table-cell">{format(expense.date, 'PPP', { locale: es })}</TableCell>
                         </TableRow>
                         );
                     })
                     ) : (
                     <TableRow>
-                        <TableCell colSpan={4} className="text-center h-24">No expenses found.</TableCell>
+                        <TableCell colSpan={4} className="text-center h-24">No se encontraron gastos.</TableCell>
                     </TableRow>
                     )}
                 </TableBody>
@@ -654,23 +658,23 @@ export function ExpenseDashboard() {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Income History</CardTitle>
+                    <CardTitle className="font-headline">Historial de Ingresos</CardTitle>
                     <div className="flex items-center gap-2">
-                        <CardDescription>Filter your income by month and year.</CardDescription>
+                        <CardDescription>Filtre sus ingresos por mes y año.</CardDescription>
                         <div className="flex items-center gap-2 ml-auto">
                             <Select value={filterYear} onValueChange={setFilterYear}>
                                 <SelectTrigger className="w-auto h-8">
-                                    <SelectValue placeholder="Year" />
+                                    <SelectValue placeholder="Año" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {incomeYears.map(year => (
-                                        <SelectItem key={year} value={year}>{year === 'all' ? 'All Years' : year}</SelectItem>
+                                        <SelectItem key={year} value={year}>{year === 'all' ? 'Todos los Años' : year}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                             <Select value={filterMonth} onValueChange={setFilterMonth}>
                                 <SelectTrigger className="w-auto h-8">
-                                    <SelectValue placeholder="Month" />
+                                    <SelectValue placeholder="Mes" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {incomeMonths.map(month => (
@@ -685,9 +689,9 @@ export function ExpenseDashboard() {
                     <Table>
                     <TableHeader>
                         <TableRow>
-                        <TableHead>Source</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="hidden md:table-cell">Date</TableHead>
+                        <TableHead>Fuente</TableHead>
+                        <TableHead className="text-right">Monto</TableHead>
+                        <TableHead className="hidden md:table-cell">Fecha</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -697,13 +701,13 @@ export function ExpenseDashboard() {
                             <TableRow key={income.id}>
                                 <TableCell className="font-medium">{income.source}</TableCell>
                                 <TableCell className="text-right">${income.amount.toFixed(2)}</TableCell>
-                                <TableCell className="hidden md:table-cell">{format(income.date, 'PPP')}</TableCell>
+                                <TableCell className="hidden md:table-cell">{format(income.date, 'PPP', { locale: es })}</TableCell>
                             </TableRow>
                             );
                         })
                         ) : (
                         <TableRow>
-                            <TableCell colSpan={3} className="text-center h-24">No income found for the selected period.</TableCell>
+                            <TableCell colSpan={3} className="text-center h-24">No se encontraron ingresos para el período seleccionado.</TableCell>
                         </TableRow>
                         )}
                     </TableBody>
@@ -715,6 +719,15 @@ export function ExpenseDashboard() {
     </div>
   );
 }
+
+const categoryTranslations: { [key: string]: string } = {
+  "Food": "Comida",
+  "Transport": "Transporte",
+  "Rent": "Alquiler",
+  "Utilities": "Servicios",
+  "Entertainment": "Entretenimiento",
+  "Other": "Otro",
+};
 
 function AIInsights({ expenses, income }: { expenses: Expense[], income: number }) {
   const [loading, setLoading] = useState(false);
@@ -732,15 +745,15 @@ function AIInsights({ expenses, income }: { expenses: Expense[], income: number 
       const result = await getPersonalizedExpenseRecommendations({
         monthlyIncome: income,
         expenses: formattedExpenses,
-        financialGoals: "Save for a vacation and reduce unnecessary spending.",
+        financialGoals: "Ahorrar para unas vacaciones y reducir gastos innecesarios.",
       });
       setInsights(result);
     } catch (error) {
       console.error("AI insights failed:", error);
       toast({
         variant: "destructive",
-        title: "Failed to get insights",
-        description: "The AI could not generate recommendations at this time.",
+        title: "No se pudieron obtener las perspectivas",
+        description: "La IA no pudo generar recomendaciones en este momento.",
       });
     } finally {
       setLoading(false);
@@ -750,15 +763,15 @@ function AIInsights({ expenses, income }: { expenses: Expense[], income: number 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">AI-Powered Insights</CardTitle>
+        <CardTitle className="font-headline">Perspectivas con IA</CardTitle>
         <CardDescription>
-          Get personalized recommendations to improve your financial health.
+          Obtenga recomendaciones personalizadas para mejorar su salud financiera.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {!insights && (
           <Button onClick={handleGetInsights} disabled={loading || expenses.length === 0}>
-            {loading ? <><ChevronsUpDown className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : "Get Recommendations"}
+            {loading ? <><ChevronsUpDown className="mr-2 h-4 w-4 animate-spin" /> Generando...</> : "Obtener Recomendaciones"}
           </Button>
         )}
         {loading && (
@@ -772,7 +785,7 @@ function AIInsights({ expenses, income }: { expenses: Expense[], income: number 
           <div className="space-y-4">
              <Card className="bg-primary/10 border-primary/20">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-medium">Summary</CardTitle>
+                <CardTitle className="text-base font-medium">Resumen</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-foreground/80">{insights.summary}</p>
@@ -783,13 +796,13 @@ function AIInsights({ expenses, income }: { expenses: Expense[], income: number 
               {insights.recommendations.map((rec, index) => (
                 <AccordionItem key={index} value={`item-${index}`}>
                   <AccordionTrigger className="font-medium hover:no-underline">
-                    {rec.category}
+                    {categoryTranslations[rec.category] || rec.category}
                   </AccordionTrigger>
                   <AccordionContent className="space-y-2">
                     <p>{rec.recommendation}</p>
                     {rec.potentialSavings && (
                       <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                        Potential Savings: ${rec.potentialSavings.toFixed(2)}
+                        Ahorro Potencial: ${rec.potentialSavings.toFixed(2)}
                       </p>
                     )}
                   </AccordionContent>
@@ -798,7 +811,7 @@ function AIInsights({ expenses, income }: { expenses: Expense[], income: number 
             </Accordion>
             
             <Button variant="outline" onClick={handleGetInsights} disabled={loading}>
-              {loading ? "..." : "Regenerate"}
+              {loading ? "..." : "Regenerar"}
             </Button>
           </div>
         )}

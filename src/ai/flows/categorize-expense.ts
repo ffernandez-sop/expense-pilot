@@ -2,11 +2,11 @@
 'use server';
 
 /**
- * @fileOverview Automatically categorizes expenses based on a description provided by the user.
+ * @fileOverview Categoriza automáticamente los gastos basándose en una descripción proporcionada por el usuario.
  *
- * - autoCategorizeExpense - A function that handles the expense categorization process.
- * - AutoCategorizeExpenseInput - The input type for the autoCategorizeExpense function.
- * - AutoCategorizeExpenseOutput - The return type for the autoCategorizeExpense function.
+ * - autoCategorizeExpense - Una función que maneja el proceso de categorización de gastos.
+ * - AutoCategorizeExpenseInput - El tipo de entrada para la función autoCategorizeExpense.
+ * - AutoCategorizeExpenseOutput - El tipo de retorno para la función autoCategorizeExpense.
  */
 
 import {ai} from '@/ai/genkit';
@@ -15,7 +15,7 @@ import {z} from 'genkit';
 const AutoCategorizeExpenseInputSchema = z.object({
   description: z
     .string()
-    .describe('The description of the expense to categorize.'),
+    .describe('La descripción del gasto a categorizar.'),
 });
 export type AutoCategorizeExpenseInput = z.infer<typeof AutoCategorizeExpenseInputSchema>;
 
@@ -23,12 +23,12 @@ const AutoCategorizeExpenseOutputSchema = z.object({
   category: z
     .string()
     .describe(
-      'The predicted category of the expense (e.g., Food, Transport, Rent, Utilities, Entertainment).' // Categories from the original prompt.
+      'La categoría predicha del gasto (e.g., Food, Transport, Rent, Utilities, Entertainment).' // Categories from the original prompt.
     ),
   confidence: z
     .number()
     .describe(
-      'A confidence score (0 to 1) indicating the certainty of the category prediction.'
+      'Un puntaje de confianza (0 a 1) que indica la certeza de la predicción de la categoría.'
     ),
 });
 export type AutoCategorizeExpenseOutput = z.infer<typeof AutoCategorizeExpenseOutputSchema>;
@@ -43,15 +43,15 @@ const prompt = ai.definePrompt({
   name: 'autoCategorizeExpensePrompt',
   input: {schema: AutoCategorizeExpenseInputSchema},
   output: {schema: AutoCategorizeExpenseOutputSchema},
-  prompt: `You are an expert personal finance assistant.  Your job is to categorize expenses based on the description provided by the user.
+  prompt: `Eres un asistente experto en finanzas personales. Tu trabajo es categorizar los gastos basándose en la descripción proporcionada por el usuario.
 
-  Given the following description, determine the most likely expense category and a confidence score.
+  Dada la siguiente descripción, determina la categoría de gasto más probable y un puntaje de confianza.
 
-  Description: {{{description}}}
+  Descripción: {{{description}}}
 
-  Categories to choose from: Food, Transport, Rent, Utilities, Entertainment
+  Categorías para elegir: Food, Transport, Rent, Utilities, Entertainment
 
-  Ensure that the category field contains ONLY a value from the list of acceptable categories.  Output the category and a confidence score between 0 and 1.
+  Asegúrate de que el campo de categoría contenga SOLAMENTE un valor de la lista de categorías aceptables. Emite la categoría y un puntaje de confianza entre 0 y 1.
   `,
 });
 

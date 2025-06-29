@@ -8,16 +8,16 @@ import {z} from 'genkit';
 
 // Input schema for personalized expense recommendations.
 const PersonalizedExpenseRecommendationsInputSchema = z.object({
-  monthlyIncome: z.number().describe('The user\'s total monthly income.'),
+  monthlyIncome: z.number().describe("El ingreso mensual total del usuario."),
   expenses: z.array(
     z.object({
-      name: z.string().describe('The name of the expense.'),
-      category: z.string().describe('The category of the expense (e.g., Food, Transport, Rent).'),
-      amount: z.number().describe('The amount spent on the expense.'),
-      date: z.string().describe('The date of the expense (YYYY-MM-DD).'),
+      name: z.string().describe("El nombre del gasto."),
+      category: z.string().describe("La categoría del gasto (e.g., Food, Transport, Rent)."),
+      amount: z.number().describe("El monto gastado en el gasto."),
+      date: z.string().describe("La fecha del gasto (YYYY-MM-DD)."),
     })
-  ).describe('A list of the user\'s expenses for the month.'),
-  financialGoals: z.string().optional().describe('The user\'s financial goals.'),
+  ).describe("Una lista de los gastos del usuario para el mes."),
+  financialGoals: z.string().optional().describe("Los objetivos financieros del usuario."),
 });
 export type PersonalizedExpenseRecommendationsInput = z.infer<typeof PersonalizedExpenseRecommendationsInputSchema>;
 
@@ -25,12 +25,12 @@ export type PersonalizedExpenseRecommendationsInput = z.infer<typeof Personalize
 const PersonalizedExpenseRecommendationsOutputSchema = z.object({
   recommendations: z.array(
     z.object({
-      category: z.string().describe('The expense category the recommendation applies to.'),
-      recommendation: z.string().describe('A specific recommendation to reduce expenses in this category.'),
-      potentialSavings: z.number().optional().describe('The potential savings from following this recommendation.'),
+      category: z.string().describe("La categoría de gasto a la que se aplica la recomendación."),
+      recommendation: z.string().describe("Una recomendación específica para reducir gastos en esta categoría."),
+      potentialSavings: z.number().optional().describe("El ahorro potencial de seguir esta recomendación."),
     })
-  ).describe('A list of personalized recommendations for reducing expenses.'),
-  summary: z.string().describe('A summary of the recommendations and overall financial health.'),
+  ).describe("Una lista de recomendaciones personalizadas para reducir gastos."),
+  summary: z.string().describe("Un resumen de las recomendaciones y la salud financiera general."),
 });
 export type PersonalizedExpenseRecommendationsOutput = z.infer<typeof PersonalizedExpenseRecommendationsOutputSchema>;
 
@@ -46,19 +46,19 @@ const personalizedExpenseRecommendationsPrompt = ai.definePrompt({
   name: 'personalizedExpenseRecommendationsPrompt',
   input: {schema: PersonalizedExpenseRecommendationsInputSchema},
   output: {schema: PersonalizedExpenseRecommendationsOutputSchema},
-  prompt: `You are an AI financial advisor providing personalized recommendations to reduce expenses.
+  prompt: `Eres un asesor financiero de IA que ofrece recomendaciones personalizadas para reducir gastos.
 
-  Analyze the user's monthly income, expenses, and financial goals to provide actionable recommendations.
+  Analiza los ingresos mensuales, los gastos y los objetivos financieros del usuario para proporcionar recomendaciones prácticas.
 
-  Monthly Income: {{monthlyIncome}}
-  Expenses:
+  Ingreso Mensual: {{monthlyIncome}}
+  Gastos:
   {{#each expenses}}
-  - {{name}} ({{category}}): {{amount}} on {{date}}
+  - {{name}} ({{category}}): {{amount}} el {{date}}
   {{/each}}
-  Financial Goals: {{financialGoals}}
+  Objetivos Financieros: {{financialGoals}}
 
-  Provide a list of recommendations, each including the category, specific recommendation, and potential savings.
-  Also, include a summary of the recommendations and overall financial health.
+  Proporciona una lista de recomendaciones, cada una incluyendo la categoría, la recomendación específica y los ahorros potenciales.
+  Además, incluye un resumen de las recomendaciones y la salud financiera general.
   `,
 });
 

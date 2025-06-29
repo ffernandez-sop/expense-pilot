@@ -8,6 +8,13 @@ export type Expense = {
   date: Date;
 };
 
+export type Income = {
+  id: string;
+  source: string;
+  amount: number;
+  date: Date;
+};
+
 export type Category = {
   value: "Food" | "Transport" | "Rent" | "Utilities" | "Entertainment" | "Other";
   label: string;

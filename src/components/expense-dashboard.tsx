@@ -77,7 +77,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Icons } from "@/components/icons";
 import { cn } from "@/lib/utils";
-import type { Expense, Category, PersonalizedExpenseRecommendationsOutput } from "@/lib/types";
+import type { Expense, Category, PersonalizedExpenseRecommendationsOutput, Income } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { autoCategorizeExpense } from "@/ai/flows/categorize-expense";
 import { getPersonalizedExpenseRecommendations } from "@/ai/flows/personalized-recommendations";
@@ -91,7 +91,7 @@ const categories: Category[] = [
   { value: "Other", label: "Other", icon: CircleDollarSign },
 ];
 
-const formSchema = z.object({
+const expenseFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   category: z.enum(categories.map(c => c.value) as [string, ...string[]], {
     required_error: "Please select a category.",
@@ -102,15 +102,25 @@ const formSchema = z.object({
   }),
 });
 
+const incomeFormSchema = z.object({
+  source: z.string().min(2, "Source must be at least 2 characters."),
+  amount: z.coerce.number().positive("Amount must be a positive number."),
+  date: z.date({
+    required_error: "A date is required.",
+  }),
+});
+
 export function ExpenseDashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [income, setIncome] = useState(5000);
+  const [incomes, setIncomes] = useState<Income[]>([]);
   const [filterCategory, setFilterCategory] = useState<Category["value"] | "all">("all");
   const { toast } = useToast();
 
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const [expenseSheetOpen, setExpenseSheetOpen] = useState(false);
+  const [incomeSheetOpen, setIncomeSheetOpen] = useState(false);
+
+  const expenseForm = useForm<z.infer<typeof expenseFormSchema>>({
+    resolver: zodResolver(expenseFormSchema),
     defaultValues: {
       name: "",
       amount: undefined,
@@ -118,10 +128,19 @@ export function ExpenseDashboard() {
     },
   });
   
+  const incomeForm = useForm<z.infer<typeof incomeFormSchema>>({
+    resolver: zodResolver(incomeFormSchema),
+    defaultValues: {
+      source: "",
+      amount: undefined,
+      date: new Date(),
+    },
+  });
+
   const [isCategorizing, setIsCategorizing] = useState(false);
 
   const handleAutoCategorize = async () => {
-    const description = form.getValues("name");
+    const description = expenseForm.getValues("name");
     if (!description) {
       toast({
         variant: "destructive",
@@ -135,13 +154,13 @@ export function ExpenseDashboard() {
       const result = await autoCategorizeExpense({ description });
       const validCategory = categories.find(c => c.value.toLowerCase() === result.category.toLowerCase());
       if (validCategory) {
-        form.setValue("category", validCategory.value);
+        expenseForm.setValue("category", validCategory.value);
         toast({
           title: "Success!",
           description: `Expense categorized as ${result.category} with ${Math.round(result.confidence * 100)}% confidence.`,
         });
       } else {
-        form.setValue("category", "Other");
+        expenseForm.setValue("category", "Other");
          toast({
           title: "Suggestion: Other",
           description: `We weren't sure, so we've suggested "Other". The AI suggested "${result.category}".`,
@@ -172,9 +191,14 @@ export function ExpenseDashboard() {
         { id: "7", name: "Internet Bill", category: "Utilities", amount: 50.00, date: new Date(2024, 5, 20) },
       ];
       setExpenses(mockExpenses);
+
+      const mockIncomes: Income[] = [
+        { id: "income-1", source: "Salary", amount: 5000, date: new Date(2024, 5, 1) },
+      ];
+      setIncomes(mockIncomes);
   }, []);
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onExpenseSubmit = (values: z.infer<typeof expenseFormSchema>) => {
     const newExpense: Expense = {
       id: new Date().toISOString(),
       ...values,
@@ -184,12 +208,27 @@ export function ExpenseDashboard() {
       title: "Expense Added",
       description: `${values.name} for $${values.amount} has been added.`,
     });
-    form.reset();
-    setSheetOpen(false);
+    expenseForm.reset();
+    setExpenseSheetOpen(false);
+  };
+
+  const onIncomeSubmit = (values: z.infer<typeof incomeFormSchema>) => {
+    const newIncome: Income = {
+      id: new Date().toISOString(),
+      ...values,
+    };
+    setIncomes(prev => [newIncome, ...prev]);
+    toast({
+      title: "Income Added",
+      description: `Income from ${values.source} for $${values.amount} has been added.`,
+    });
+    incomeForm.reset({ source: "", amount: undefined, date: new Date() });
+    setIncomeSheetOpen(false);
   };
 
   const totalExpenses = useMemo(() => expenses.reduce((sum, expense) => sum + expense.amount, 0), [expenses]);
-  const balance = useMemo(() => income - totalExpenses, [income, totalExpenses]);
+  const totalIncome = useMemo(() => incomes.reduce((sum, income) => sum + income.amount, 0), [incomes]);
+  const balance = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
 
   const filteredExpenses = useMemo(() => {
     if (filterCategory === "all") return expenses;
@@ -224,7 +263,103 @@ export function ExpenseDashboard() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <Sheet open={incomeSheetOpen} onOpenChange={setIncomeSheetOpen}>
+            <SheetTrigger asChild>
+              <Button size="sm" variant="outline" className="h-8 gap-1">
+                <Plus className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Add Income</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <Form {...incomeForm}>
+                <form onSubmit={incomeForm.handleSubmit(onIncomeSubmit)} className="flex flex-col h-full">
+                  <SheetHeader>
+                    <SheetTitle>Add New Income</SheetTitle>
+                    <SheetDescription>
+                      Fill in the details for your new income source.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex-1 py-4 space-y-4 overflow-y-auto">
+                    <FormField
+                      control={incomeForm.control}
+                      name="source"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Income Source</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Salary, Freelance" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={incomeForm.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Amount</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="0.00" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={incomeForm.control}
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date > new Date() || date < new Date("1900-01-01")
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <SheetFooter>
+                    <SheetClose asChild>
+                      <Button variant="outline">Cancel</Button>
+                    </SheetClose>
+                    <Button type="submit">Save Income</Button>
+                  </SheetFooter>
+                </form>
+              </Form>
+            </SheetContent>
+          </Sheet>
+
+          <Sheet open={expenseSheetOpen} onOpenChange={setExpenseSheetOpen}>
             <SheetTrigger asChild>
               <Button size="sm" className="h-8 gap-1">
                 <Plus className="h-3.5 w-3.5" />
@@ -232,8 +367,8 @@ export function ExpenseDashboard() {
               </Button>
             </SheetTrigger>
             <SheetContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+              <Form {...expenseForm}>
+                <form onSubmit={expenseForm.handleSubmit(onExpenseSubmit)} className="flex flex-col h-full">
                   <SheetHeader>
                     <SheetTitle>Add a New Expense</SheetTitle>
                     <SheetDescription>
@@ -242,7 +377,7 @@ export function ExpenseDashboard() {
                   </SheetHeader>
                   <div className="flex-1 py-4 space-y-4 overflow-y-auto">
                     <FormField
-                      control={form.control}
+                      control={expenseForm.control}
                       name="name"
                       render={({ field }) => (
                         <FormItem>
@@ -255,7 +390,7 @@ export function ExpenseDashboard() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={expenseForm.control}
                       name="category"
                       render={({ field }) => (
                         <FormItem>
@@ -282,7 +417,7 @@ export function ExpenseDashboard() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={expenseForm.control}
                       name="amount"
                       render={({ field }) => (
                         <FormItem>
@@ -295,7 +430,7 @@ export function ExpenseDashboard() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={expenseForm.control}
                       name="date"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
@@ -371,7 +506,7 @@ export function ExpenseDashboard() {
               <PiggyBank className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-headline">${income.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              <div className="text-2xl font-bold font-headline">${totalIncome.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
               <p className="text-xs text-muted-foreground">Your income for this month</p>
             </CardContent>
           </Card>
@@ -426,7 +561,7 @@ export function ExpenseDashboard() {
               </ChartContainer>
             </CardContent>
           </Card>
-          <AIInsights expenses={expenses} income={income} />
+          <AIInsights expenses={expenses} income={totalIncome} />
         </div>
         <Card>
           <CardHeader>
@@ -529,7 +664,7 @@ function AIInsights({ expenses, income }: { expenses: Expense[], income: number 
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {!insights && (
-          <Button onClick={handleGetInsights} disabled={loading}>
+          <Button onClick={handleGetInsights} disabled={loading || expenses.length === 0}>
             {loading ? <><ChevronsUpDown className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : "Get Recommendations"}
           </Button>
         )}

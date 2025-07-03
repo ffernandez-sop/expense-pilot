@@ -250,31 +250,33 @@ export function ExpenseDashboard() {
     incomeForm.reset({ source: "", amount: undefined, date: new Date() });
     setIncomeSheetOpen(false);
   };
-
-  const totalExpenses = useMemo(() => expenses.reduce((sum, expense) => sum + expense.amount, 0), [expenses]);
-  const totalIncome = useMemo(() => incomes.reduce((sum, income) => sum + income.amount, 0), [incomes]);
-  const balance = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
   
   const expenseYears = useMemo(() => {
     if (expenses.length === 0) return ["all"];
     const years = Array.from(new Set(expenses.map(e => e.date.getFullYear().toString()))).sort((a,b) => parseInt(b) - parseInt(a));
     return ["all", ...years];
   }, [expenses]);
-
-  const filteredExpenses = useMemo(() => {
-    return expenses.filter(expense => {
-      const categoryMatch = expenseFilterCategory === "all" || expense.category === expenseFilterCategory;
-      const yearMatch = expenseFilterYear === "all" || expense.date.getFullYear().toString() === expenseFilterYear;
-      const monthMatch = expenseFilterMonth === "all" || expense.date.getMonth().toString() === expenseFilterMonth;
-      return categoryMatch && yearMatch && monthMatch;
-    });
-  }, [expenses, expenseFilterCategory, expenseFilterYear, expenseFilterMonth]);
-
+  
   const incomeYears = useMemo(() => {
     if (incomes.length === 0) return ["all"];
     const years = Array.from(new Set(incomes.map(i => i.date.getFullYear().toString()))).sort((a,b) => parseInt(b) - parseInt(a));
     return ["all", ...years];
   }, [incomes]);
+
+  const timeFilteredExpenses = useMemo(() => {
+    return expenses.filter(expense => {
+      const yearMatch = expenseFilterYear === "all" || expense.date.getFullYear().toString() === expenseFilterYear;
+      const monthMatch = expenseFilterMonth === "all" || expense.date.getMonth().toString() === expenseFilterMonth;
+      return yearMatch && monthMatch;
+    });
+  }, [expenses, expenseFilterYear, expenseFilterMonth]);
+
+  const tableFilteredExpenses = useMemo(() => {
+    return timeFilteredExpenses.filter(expense => {
+      const categoryMatch = expenseFilterCategory === "all" || expense.category === expenseFilterCategory;
+      return categoryMatch;
+    });
+  }, [timeFilteredExpenses, expenseFilterCategory]);
 
   const filteredIncomes = useMemo(() => {
       return incomes.filter(income => {
@@ -283,15 +285,19 @@ export function ExpenseDashboard() {
           return yearMatch && monthMatch;
       });
   }, [incomes, incomeFilterYear, incomeFilterMonth]);
+  
+  const totalExpenses = useMemo(() => timeFilteredExpenses.reduce((sum, expense) => sum + expense.amount, 0), [timeFilteredExpenses]);
+  const totalIncome = useMemo(() => filteredIncomes.reduce((sum, income) => sum + income.amount, 0), [filteredIncomes]);
+  const balance = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
 
   const chartData = useMemo(() => {
     return categories.map(category => ({
       name: category.label,
-      value: expenses
+      value: timeFilteredExpenses
         .filter(e => e.category === category.value)
         .reduce((sum, e) => sum + e.amount, 0),
     })).filter(item => item.value > 0);
-  }, [expenses]);
+  }, [timeFilteredExpenses]);
   
   const chartColors = ["#3b82f6", "#ffb347", "#10b981", "#8b5cf6", "#ec4899", "#f97316"];
 
@@ -558,7 +564,7 @@ export function ExpenseDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-headline">${totalIncome.toLocaleString("es-ES", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              <p className="text-xs text-muted-foreground">Sus ingresos para este mes</p>
+              <p className="text-xs text-muted-foreground">Sus ingresos para el período seleccionado</p>
             </CardContent>
           </Card>
           <Card>
@@ -568,7 +574,7 @@ export function ExpenseDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-headline">${totalExpenses.toLocaleString("es-ES", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              <p className="text-xs text-muted-foreground">Sus gastos para este mes</p>
+              <p className="text-xs text-muted-foreground">Sus gastos para el período seleccionado</p>
             </CardContent>
           </Card>
           <Card>
@@ -578,7 +584,7 @@ export function ExpenseDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-headline">${balance.toLocaleString("es-ES", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-              <p className="text-xs text-muted-foreground">Su saldo restante</p>
+              <p className="text-xs text-muted-foreground">Su saldo para el período seleccionado</p>
             </CardContent>
           </Card>
         </div>
@@ -586,7 +592,7 @@ export function ExpenseDashboard() {
           <Card className="xl:col-span-2">
             <CardHeader>
               <CardTitle className="font-headline">Distribución de Gastos</CardTitle>
-              <CardDescription>Un desglose visual de sus gastos por categoría.</CardDescription>
+              <CardDescription>Un desglose visual de sus gastos por categoría para el período seleccionado.</CardDescription>
             </CardHeader>
             <CardContent className="pb-8">
               <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[300px]">
@@ -666,8 +672,8 @@ export function ExpenseDashboard() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {filteredExpenses.length > 0 ? (
-                    filteredExpenses.map(expense => {
+                    {tableFilteredExpenses.length > 0 ? (
+                    tableFilteredExpenses.map(expense => {
                         const CategoryIcon = categories.find(c => c.value === expense.category)?.icon || CircleDollarSign;
                         const categoryLabel = categories.find(c => c.value === expense.category)?.label || expense.category;
                         return (

@@ -13,7 +13,19 @@ import {
   Film,
   CircleDollarSign,
   Receipt,
-  PiggyBank
+  PiggyBank,
+  Tag,
+  ShoppingBag,
+  Gift,
+  Heart,
+  BookOpen,
+  GraduationCap,
+  Briefcase,
+  Plane,
+  Coffee,
+  Smartphone,
+  PawPrint,
+  Music,
 } from "lucide-react";
 import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell } from "recharts";
 import { format } from "date-fns";
@@ -83,7 +95,7 @@ import { useToast } from "@/hooks/use-toast";
 import { autoCategorizeExpense } from "@/ai/flows/categorize-expense";
 import { getPersonalizedExpenseRecommendations } from "@/ai/flows/personalized-recommendations";
 
-const categories: Category[] = [
+const initialCategories: Category[] = [
   { value: "Food", label: "Comida", icon: Utensils },
   { value: "Transport", label: "Transporte", icon: Car },
   { value: "Rent", label: "Alquiler", icon: Home },
@@ -91,6 +103,27 @@ const categories: Category[] = [
   { value: "Entertainment", label: "Entretenimiento", icon: Film },
   { value: "Other", label: "Otro", icon: CircleDollarSign },
 ];
+
+const availableIcons = [
+    { name: "Utensils", component: Utensils, label: "Comida" },
+    { name: "Car", component: Car, label: "Transporte" },
+    { name: "Home", component: Home, label: "Casa" },
+    { name: "Bolt", component: Bolt, label: "Servicios" },
+    { name: "Film", component: Film, label: "Entretenimiento" },
+    { name: "ShoppingBag", component: ShoppingBag, label: "Compras" },
+    { name: "Gift", component: Gift, label: "Regalos" },
+    { name: "Heart", component: Heart, label: "Salud" },
+    { name: "BookOpen", component: BookOpen, label: "Educación" },
+    { name: "GraduationCap", component: GraduationCap, label: "Educación" },
+    { name: "Briefcase", component: Briefcase, label: "Trabajo" },
+    { name: "Plane", component: Plane, label: "Viajes" },
+    { name: "Coffee", component: Coffee, label: "Café/Bebidas" },
+    { name: "Smartphone", component: Smartphone, label: "Tecnología" },
+    { name: "PawPrint", component: PawPrint, label: "Mascotas" },
+    { name: "Music", component: Music, label: "Música" },
+    { name: "CircleDollarSign", component: CircleDollarSign, label: "Otro" },
+];
+
 
 const incomeMonths = [
     { value: "all", label: "Todos los Meses" },
@@ -108,17 +141,6 @@ const incomeMonths = [
     { value: "11", label: "Diciembre" },
 ];
 
-const expenseFormSchema = z.object({
-  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
-  category: z.enum(categories.map(c => c.value) as [string, ...string[]], {
-    required_error: "Por favor seleccione una categoría.",
-  }),
-  amount: z.coerce.number().positive("El monto debe ser un número positivo."),
-  date: z.date({
-    required_error: "Se requiere una fecha.",
-  }),
-});
-
 const incomeFormSchema = z.object({
   source: z.string().min(2, "La fuente debe tener al menos 2 caracteres."),
   amount: z.coerce.number().positive("El monto debe ser un número positivo."),
@@ -127,9 +149,15 @@ const incomeFormSchema = z.object({
   }),
 });
 
+const categoryFormSchema = z.object({
+    label: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
+    icon: z.string({ required_error: "Por favor seleccione un ícono." }),
+});
+
 export function ExpenseDashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
   
   const [expenseFilterCategory, setExpenseFilterCategory] = useState<Category["value"] | "all">("all");
   const [expenseFilterYear, setExpenseFilterYear] = useState<string>("all");
@@ -142,6 +170,18 @@ export function ExpenseDashboard() {
 
   const [expenseSheetOpen, setExpenseSheetOpen] = useState(false);
   const [incomeSheetOpen, setIncomeSheetOpen] = useState(false);
+  const [categorySheetOpen, setCategorySheetOpen] = useState(false);
+
+  const expenseFormSchema = useMemo(() => z.object({
+    name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
+    category: z.enum(categories.map(c => c.value) as [string, ...string[]], {
+      required_error: "Por favor seleccione una categoría.",
+    }),
+    amount: z.coerce.number().positive("El monto debe ser un número positivo."),
+    date: z.date({
+      required_error: "Se requiere una fecha.",
+    }),
+  }), [categories]);
 
   const expenseForm = useForm<z.infer<typeof expenseFormSchema>>({
     resolver: zodResolver(expenseFormSchema),
@@ -160,6 +200,27 @@ export function ExpenseDashboard() {
       date: new Date(),
     },
   });
+  
+  const categoryForm = useForm<z.infer<typeof categoryFormSchema>>({
+    resolver: zodResolver(categoryFormSchema),
+    defaultValues: {
+        label: "",
+    },
+  });
+
+  const { reset: resetExpenseForm, getValues: getExpenseValues } = expenseForm;
+  useEffect(() => {
+    const currentValues = getExpenseValues();
+    const selectedCategoryIsValid = categories.some(c => c.value === currentValues.category);
+    
+    resetExpenseForm({
+        name: currentValues.name,
+        amount: currentValues.amount,
+        date: currentValues.date,
+        category: selectedCategoryIsValid ? currentValues.category : undefined,
+    });
+  }, [categories, resetExpenseForm, getExpenseValues]);
+
 
   const [isCategorizing, setIsCategorizing] = useState(false);
 
@@ -181,7 +242,7 @@ export function ExpenseDashboard() {
         expenseForm.setValue("category", validCategory.value);
         toast({
           title: "¡Éxito!",
-          description: `Gasto categorizado como ${result.category} con ${Math.round(result.confidence * 100)}% de confianza.`,
+          description: `Gasto categorizado como ${validCategory.label} con ${Math.round(result.confidence * 100)}% de confianza.`,
         });
       } else {
         expenseForm.setValue("category", "Other");
@@ -250,6 +311,32 @@ export function ExpenseDashboard() {
     incomeForm.reset({ source: "", amount: undefined, date: new Date() });
     setIncomeSheetOpen(false);
   };
+
+  const onCategorySubmit = (values: z.infer<typeof categoryFormSchema>) => {
+    const IconComponent = availableIcons.find(icon => icon.name === values.icon)?.component || CircleDollarSign;
+    const newCategory: Category = {
+        value: values.label,
+        label: values.label,
+        icon: IconComponent
+    };
+
+    if (categories.some(c => c.label.toLowerCase() === newCategory.label.toLowerCase())) {
+        toast({
+            variant: "destructive",
+            title: "Categoría Duplicada",
+            description: `Ya existe una categoría con el nombre "${newCategory.label}".`
+        });
+        return;
+    }
+
+    setCategories(prev => [...prev, newCategory]);
+    toast({
+        title: "Categoría Creada",
+        description: `La categoría "${values.label}" ha sido creada exitosamente.`
+    });
+    categoryForm.reset();
+    setCategorySheetOpen(false);
+  };
   
   const expenseYears = useMemo(() => {
     if (expenses.length === 0) return ["all"];
@@ -297,9 +384,9 @@ export function ExpenseDashboard() {
         .filter(e => e.category === category.value)
         .reduce((sum, e) => sum + e.amount, 0),
     })).filter(item => item.value > 0);
-  }, [timeFilteredExpenses]);
+  }, [timeFilteredExpenses, categories]);
   
-  const chartColors = ["#3b82f6", "#ffb347", "#10b981", "#8b5cf6", "#ec4899", "#f97316"];
+  const chartColors = ["#3b82f6", "#ffb347", "#10b981", "#8b5cf6", "#ec4899", "#f97316", "#fde047", "#a3e635", "#22d3ee", "#e879f9" ];
 
   const chartConfig = {
     expenses: {
@@ -318,6 +405,78 @@ export function ExpenseDashboard() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <Sheet open={categorySheetOpen} onOpenChange={setCategorySheetOpen}>
+            <SheetTrigger asChild>
+              <Button size="sm" variant="outline" className="h-8 gap-1">
+                <Tag className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Crear Categoría</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <Form {...categoryForm}>
+                <form onSubmit={categoryForm.handleSubmit(onCategorySubmit)} className="flex flex-col h-full">
+                  <SheetHeader>
+                    <SheetTitle>Crear Nueva Categoría</SheetTitle>
+                    <SheetDescription>
+                      Añada una nueva categoría de gastos para organizar mejor sus finanzas.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex-1 py-4 space-y-4 overflow-y-auto">
+                    <FormField
+                      control={categoryForm.control}
+                      name="label"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nombre de la Categoría</FormLabel>
+                          <FormControl>
+                            <Input placeholder="ej. Gimnasio, Libros" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={categoryForm.control}
+                      name="icon"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ícono</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccione un ícono" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {availableIcons.map(icon => {
+                                const IconComponent = icon.component;
+                                return (
+                                <SelectItem key={icon.name} value={icon.name}>
+                                    <div className="flex items-center gap-2">
+                                        <IconComponent className="h-4 w-4" />
+                                        <span>{icon.label}</span>
+                                    </div>
+                                </SelectItem>
+                                )
+                            })}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <SheetFooter>
+                    <SheetClose asChild>
+                      <Button variant="outline">Cancelar</Button>
+                    </SheetClose>
+                    <Button type="submit">Crear Categoría</Button>
+                  </SheetFooter>
+                </form>
+              </Form>
+            </SheetContent>
+          </Sheet>
+
           <Sheet open={incomeSheetOpen} onOpenChange={setIncomeSheetOpen}>
             <SheetTrigger asChild>
               <Button size="sm" variant="outline" className="h-8 gap-1">

@@ -18,7 +18,7 @@ export type Income = {
 };
 
 export type Category = {
-  value: "Food" | "Transport" | "Rent" | "Utilities" | "Entertainment" | "Other";
+  value: string;
   label: string;
   icon: LucideIcon;
 };

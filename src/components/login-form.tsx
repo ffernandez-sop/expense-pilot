@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,14 +14,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/icons";
+import { Loader2 } from "lucide-react";
 
 export function LoginForm() {
   const router = useRouter();
+  const [loading, setLoading] = React.useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate a successful login and redirect
-    router.push("/dashboard");
+    setLoading(true);
+
+    // Simulate a network request
+    setTimeout(() => {
+      // Simulate a successful login and redirect
+      router.push("/dashboard");
+    }, 1000);
   };
 
   return (
@@ -38,7 +46,7 @@ export function LoginForm() {
         <CardContent className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="email">Correo Electrónico</Label>
-            <Input id="email" type="email" placeholder="m@ejemplo.com" required />
+            <Input id="email" type="email" placeholder="m@ejemplo.com" required disabled={loading}/>
           </div>
           <div className="grid gap-2">
             <div className="flex items-center">
@@ -47,11 +55,13 @@ export function LoginForm() {
                 ¿Olvidó su contraseña?
               </a>
             </div>
-            <Input id="password" type="password" required />
+            <Input id="password" type="password" required disabled={loading}/>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full">Iniciar Sesión</Button>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? <Loader2 className="animate-spin" /> : "Iniciar Sesión"}
+          </Button>
           <div className="text-center text-sm">
             ¿No tiene una cuenta?{" "}
             <a href="#" className="underline">

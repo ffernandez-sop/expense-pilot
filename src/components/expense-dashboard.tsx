@@ -5,7 +5,6 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
-  ChevronsUpDown,
   Download,
   Plus,
   Calendar as CalendarIcon,
@@ -91,7 +90,6 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   ChartContainer,
   ChartTooltip as ChartTooltipShadcn,
@@ -99,13 +97,10 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import type { Expense, Category, PersonalizedExpenseRecommendationsOutput, Income } from "@/lib/types";
+import type { Expense, Category, Income } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { autoCategorizeExpense } from "@/ai/flows/categorize-expense";
-import { getPersonalizedExpenseRecommendations } from "@/ai/flows/personalized-recommendations";
-import { useSidebar, SidebarTrigger } from "./ui/sidebar";
 
 const initialCategories: Category[] = [
   { value: "Food", label: "Comida", icon: Utensils },
@@ -169,7 +164,6 @@ const categoryFormSchema = z.object({
 export function ExpenseDashboard() {
   const router = useRouter();
   const { setTheme } = useTheme();
-  const { isMobile } = useSidebar();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
@@ -280,7 +274,6 @@ export function ExpenseDashboard() {
 
 
   useEffect(() => {
-    // On initial load, create some mock data
     const mockExpenses: Expense[] = [
         { id: "1", name: "Compras", category: "Food", amount: 75.50, date: new Date(2024, 5, 2) },
         { id: "2", name: "Gasolina", category: "Transport", amount: 40.00, date: new Date(2024, 5, 5) },
@@ -414,7 +407,6 @@ export function ExpenseDashboard() {
   return (
     <>
       <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-        {isMobile && <SidebarTrigger><PanelLeft /></SidebarTrigger>}
         <h1 className="text-2xl font-semibold font-headline">Dashboard</h1>
 
         <div className="ml-auto flex items-center gap-2">
@@ -795,8 +787,8 @@ export function ExpenseDashboard() {
             </CardContent>
           </Card>
         </div>
-        <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
-          <Card>
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+          <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="font-headline">Distribución de Gastos</CardTitle>
               <CardDescription>Un desglose visual de sus gastos por categoría para el período seleccionado.</CardDescription>
@@ -966,105 +958,5 @@ export function ExpenseDashboard() {
         </div>
       </main>
     </>
-  );
-}
-
-const categoryTranslations: { [key: string]: string } = {
-  "Food": "Comida",
-  "Transport": "Transporte",
-  "Rent": "Alquiler",
-  "Utilities": "Servicios",
-  "Entertainment": "Entretenimiento",
-  "Other": "Otro",
-};
-
-function AIInsights({ expenses, income }: { expenses: Expense[], income: number }) {
-  const [loading, setLoading] = useState(false);
-  const [insights, setInsights] = useState<PersonalizedExpenseRecommendationsOutput | null>(null);
-  const { toast } = useToast();
-
-  const handleGetInsights = async () => {
-    setLoading(true);
-    setInsights(null);
-    try {
-      const formattedExpenses = expenses.map(e => ({
-        ...e,
-        date: format(e.date, 'yyyy-MM-dd')
-      }));
-      const result = await getPersonalizedExpenseRecommendations({
-        monthlyIncome: income,
-        expenses: formattedExpenses,
-        financialGoals: "Ahorrar para unas vacaciones y reducir gastos innecesarios.",
-      });
-      setInsights(result);
-    } catch (error) {
-      console.error("AI insights failed:", error);
-      toast({
-        variant: "destructive",
-        title: "No se pudieron obtener las perspectivas",
-        description: "La IA no pudo generar recomendaciones en este momento.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">Perspectivas con IA</CardTitle>
-        <CardDescription>
-          Obtenga recomendaciones personalizadas para mejorar su salud financiera.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {!insights && (
-          <Button onClick={handleGetInsights} disabled={loading || expenses.length === 0}>
-            {loading ? <><ChevronsUpDown className="mr-2 h-4 w-4 animate-spin" /> Generando...</> : "Obtener Recomendaciones"}
-          </Button>
-        )}
-        {loading && (
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-          </div>
-        )}
-        {insights && (
-          <div className="space-y-4">
-             <Card className="bg-primary/10 border-primary/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-medium">Resumen</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-foreground/80">{insights.summary}</p>
-              </CardContent>
-            </Card>
-
-            <Accordion type="single" collapsible className="w-full">
-              {insights.recommendations.map((rec, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger className="font-medium hover:no-underline">
-                    {categoryTranslations[rec.category] || rec.category}
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-2">
-                    <p>{rec.recommendation}</p>
-                    {rec.potentialSavings && (
-                      <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                        Ahorro Potencial: ${rec.potentialSavings.toFixed(2)}
-                      </p>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-            
-            <Button variant="outline" onClick={handleGetInsights} disabled={loading}>
-              {loading ? "..." : "Regenerar"}
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { LoginForm } from "@/components/login-form";
 
 export default function LoginPage() {
@@ -6,4 +7,8 @@ export default function LoginPage() {
       <LoginForm />
     </div>
   );
+=======
+export default function Home() {
+  return <></>;
+>>>>>>> 76a3c22 (Resolve merge conflicts)
 }

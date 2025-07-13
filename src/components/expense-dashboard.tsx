@@ -31,8 +31,9 @@ import {
   User,
   LogOut,
   Sun,
+  PanelLeft,
 } from "lucide-react";
-import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell } from "recharts";
+import { Pie, PieChart, ResponsiveContainer, Cell } from "recharts";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
 import * as z from "zod";
@@ -98,12 +99,12 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Icons } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import type { Expense, Category, PersonalizedExpenseRecommendationsOutput, Income } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { autoCategorizeExpense } from "@/ai/flows/categorize-expense";
 import { getPersonalizedExpenseRecommendations } from "@/ai/flows/personalized-recommendations";
+import { useSidebar, SidebarTrigger } from "./ui/sidebar";
 
 const initialCategories: Category[] = [
   { value: "Food", label: "Comida", icon: Utensils },
@@ -167,6 +168,7 @@ const categoryFormSchema = z.object({
 export function ExpenseDashboard() {
   const router = useRouter();
   const { setTheme } = useTheme();
+  const { isMobile } = useSidebar();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
@@ -411,10 +413,8 @@ export function ExpenseDashboard() {
   return (
     <>
       <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-        <div className="flex items-center gap-2">
-            <Icons.logo className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-semibold font-headline">ExpensePilot</h1>
-        </div>
+        {isMobile && <SidebarTrigger><PanelLeft /></SidebarTrigger>}
+        <h1 className="text-2xl font-semibold font-headline">Dashboard</h1>
 
         <div className="ml-auto flex items-center gap-2">
           <Sheet open={categorySheetOpen} onOpenChange={setCategorySheetOpen}>
@@ -833,7 +833,7 @@ export function ExpenseDashboard() {
                 <div className="flex items-center gap-2">
                 <CardDescription>Vea y gestione sus transacciones recientes.</CardDescription>
                 <div className="flex items-center gap-2 ml-auto">
-                    <Select value={expenseFilterYear} onValueChange={setExpenseFilterYear}>
+                    <Select value={expenseFilterYear} onValuechange={setExpenseFilterYear}>
                         <SelectTrigger className="w-auto h-8">
                             <SelectValue placeholder="Año" />
                         </SelectTrigger>
@@ -843,7 +843,7 @@ export function ExpenseDashboard() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Select value={expenseFilterMonth} onValueChange={setExpenseFilterMonth}>
+                    <Select value={expenseFilterMonth} onValuechange={setExpenseFilterMonth}>
                         <SelectTrigger className="w-auto h-8">
                             <SelectValue placeholder="Mes" />
                         </SelectTrigger>
@@ -853,7 +853,7 @@ export function ExpenseDashboard() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Select value={expenseFilterCategory} onValueChange={(value) => setExpenseFilterCategory(value as Category["value"] | "all")}>
+                    <Select value={expenseFilterCategory} onValuechange={(value) => setExpenseFilterCategory(value as Category["value"] | "all")}>
                         <SelectTrigger className="w-auto h-8">
                         <SelectValue placeholder="Filtrar por categoría" />
                         </SelectTrigger>
@@ -911,7 +911,7 @@ export function ExpenseDashboard() {
                     <div className="flex items-center gap-2">
                         <CardDescription>Filtre sus ingresos por mes y año.</CardDescription>
                         <div className="flex items-center gap-2 ml-auto">
-                            <Select value={incomeFilterYear} onValueChange={setIncomeFilterYear}>
+                            <Select value={incomeFilterYear} onValuechange={setIncomeFilterYear}>
                                 <SelectTrigger className="w-auto h-8">
                                     <SelectValue placeholder="Año" />
                                 </SelectTrigger>
@@ -921,7 +921,7 @@ export function ExpenseDashboard() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Select value={incomeFilterMonth} onValueChange={setIncomeFilterMonth}>
+                            <Select value={incomeFilterMonth} onValuechange={setIncomeFilterMonth}>
                                 <SelectTrigger className="w-auto h-8">
                                     <SelectValue placeholder="Mes" />
                                 </SelectTrigger>

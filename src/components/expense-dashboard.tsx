@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -794,8 +795,8 @@ export function ExpenseDashboard() {
             </CardContent>
           </Card>
         </div>
-        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-          <Card className="xl:col-span-2">
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-1">
+          <Card>
             <CardHeader>
               <CardTitle className="font-headline">Distribución de Gastos</CardTitle>
               <CardDescription>Un desglose visual de sus gastos por categoría para el período seleccionado.</CardDescription>
@@ -824,7 +825,6 @@ export function ExpenseDashboard() {
               </ChartContainer>
             </CardContent>
           </Card>
-          <AIInsights expenses={expenses} income={totalIncome} />
         </div>
         <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
             <Card>
@@ -833,7 +833,7 @@ export function ExpenseDashboard() {
                 <div className="flex items-center gap-2">
                 <CardDescription>Vea y gestione sus transacciones recientes.</CardDescription>
                 <div className="flex items-center gap-2 ml-auto">
-                    <Select value={expenseFilterYear} onValuechange={setExpenseFilterYear}>
+                    <Select value={expenseFilterYear} onValueChange={setExpenseFilterYear}>
                         <SelectTrigger className="w-auto h-8">
                             <SelectValue placeholder="Año" />
                         </SelectTrigger>
@@ -843,7 +843,7 @@ export function ExpenseDashboard() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Select value={expenseFilterMonth} onValuechange={setExpenseFilterMonth}>
+                    <Select value={expenseFilterMonth} onValueChange={setExpenseFilterMonth}>
                         <SelectTrigger className="w-auto h-8">
                             <SelectValue placeholder="Mes" />
                         </SelectTrigger>
@@ -853,7 +853,7 @@ export function ExpenseDashboard() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Select value={expenseFilterCategory} onValuechange={(value) => setExpenseFilterCategory(value as Category["value"] | "all")}>
+                    <Select value={expenseFilterCategory} onValueChange={(value) => setExpenseFilterCategory(value as Category["value"] | "all")}>
                         <SelectTrigger className="w-auto h-8">
                         <SelectValue placeholder="Filtrar por categoría" />
                         </SelectTrigger>
@@ -911,7 +911,7 @@ export function ExpenseDashboard() {
                     <div className="flex items-center gap-2">
                         <CardDescription>Filtre sus ingresos por mes y año.</CardDescription>
                         <div className="flex items-center gap-2 ml-auto">
-                            <Select value={incomeFilterYear} onValuechange={setIncomeFilterYear}>
+                            <Select value={incomeFilterYear} onValueChange={setIncomeFilterYear}>
                                 <SelectTrigger className="w-auto h-8">
                                     <SelectValue placeholder="Año" />
                                 </SelectTrigger>
@@ -921,7 +921,7 @@ export function ExpenseDashboard() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Select value={incomeFilterMonth} onValuechange={setIncomeFilterMonth}>
+                            <Select value={incomeFilterMonth} onValueChange={setIncomeFilterMonth}>
                                 <SelectTrigger className="w-auto h-8">
                                     <SelectValue placeholder="Mes" />
                                 </SelectTrigger>

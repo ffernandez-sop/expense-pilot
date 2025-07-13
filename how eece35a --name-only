@@ -1,0 +1,26 @@
+[33mcommit bf4154c8670eb204cbcc59446ac3c01df033d082[m
+Author: Fabio Fernandez <fabiofernandez.it@gmail.com>
+Date:   Sun Jun 29 22:14:28 2025 +0000
+
+    primer commit
+
+.next/app-build-manifest.json
+.next/build-manifest.json
+.next/fallback-build-manifest.json
+.next/server/app-paths-manifest.json
+.next/server/app/page.js
+.next/server/app/page/app-build-manifest.json
+.next/server/app/page/server-reference-manifest.json
+.next/server/app/page_client-reference-manifest.js
+.next/server/chunks/ssr/src_8910624e._.js
+.next/server/chunks/ssr/src_8910624e._.js.map
+.next/server/middleware-build-manifest.js
+.next/server/pages-manifest.json
+.next/server/server-reference-manifest.js
+.next/server/server-reference-manifest.json
+.next/static/chunks/src_40563610._.js
+.next/static/chunks/src_40563610._.js.map
+.next/static/chunks/src_app_globals_b805903d.css
+.next/static/chunks/src_app_globals_b805903d.css.map
+.next/static/chunks/src_app_page_tsx_593c026d._.js
+.next/trace

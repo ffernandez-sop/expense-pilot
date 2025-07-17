@@ -1,5 +1,10 @@
 import { ExpenseDashboard } from "@/components/expense-dashboard";
+import AuthGuard from "../../components/AuthGuard";
 
 export default function DashboardPage() {
-  return <ExpenseDashboard />;
+  return (  
+    <AuthGuard>
+      <ExpenseDashboard />
+    </AuthGuard>
+  );
 }

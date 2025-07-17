@@ -20,16 +20,38 @@ export function LoginForm() {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
 
-    // Simulate a network request
-    setTimeout(() => {
-      // Simulate a successful login and redirect
-      router.push("/dashboard");
-    }, 1000);
-  };
+  const email = (document.getElementById("email") as HTMLInputElement).value;
+  const password = (document.getElementById("password") as HTMLInputElement).value;
+
+  try {
+    const res = await fetch("http://localhost:8080/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({"username": email, "password": password }),
+    });
+
+    if (!res.ok) {
+      alert("Credenciales inválidas");
+      setLoading(false);
+      return;
+    }
+
+    const data = await res.json();
+    localStorage.setItem("token", data.token); // Guarda el JWT
+
+    router.push("/dashboard"); // Redirige si el login fue exitoso
+  } catch (err) {
+    console.error("Error al iniciar sesión", err);
+    alert("Error de conexión con el servidor");
+    setLoading(false);
+  } finally {
+    
+  }
+};
 
   return (
     <Card className="w-full max-w-sm mx-4">

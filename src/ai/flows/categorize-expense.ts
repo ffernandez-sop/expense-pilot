@@ -23,7 +23,7 @@ const AutoCategorizeExpenseOutputSchema = z.object({
   category: z
     .string()
     .describe(
-      'La categoría predicha del gasto (e.g., Food, Transport, Rent, Utilities, Entertainment).' // Categories from the original prompt.
+      'La categoría predicha del gasto (e.g., Comida, Transporte, Alquiler, Servicios, Entretenimiento, Otro).'
     ),
   confidence: z
     .number()
@@ -49,7 +49,7 @@ const prompt = ai.definePrompt({
 
   Descripción: {{{description}}}
 
-  Categorías para elegir: Food, Transport, Rent, Utilities, Entertainment
+  Categorías para elegir: Comida, Transporte, Alquiler, Servicios, Entretenimiento, Otro
 
   Asegúrate de que el campo de categoría contenga SOLAMENTE un valor de la lista de categorías aceptables. Emite la categoría y un puntaje de confianza entre 0 y 1.
   `,

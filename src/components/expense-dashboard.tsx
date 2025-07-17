@@ -103,12 +103,12 @@ import { useToast } from "@/hooks/use-toast";
 import { autoCategorizeExpense } from "@/ai/flows/categorize-expense";
 
 const initialCategories: Category[] = [
-  { value: "Food", label: "Comida", icon: Utensils },
-  { value: "Transport", label: "Transporte", icon: Car },
-  { value: "Rent", label: "Alquiler", icon: Home },
-  { value: "Utilities", label: "Servicios", icon: Bolt },
-  { value: "Entertainment", label: "Entretenimiento", icon: Film },
-  { value: "Other", label: "Otro", icon: CircleDollarSign },
+  { value: 1, label: "Comida", icon: Utensils },
+  { value: 2, label: "Transporte", icon: Car },
+  { value: 3, label: "Alquiler", icon: Home },
+  { value: 4, label: "Servicios", icon: Bolt },
+  { value: 5, label: "Entretenimiento", icon: Film },
+  { value: 6, label: "Otro", icon: CircleDollarSign },
 ];
 
 const availableIcons = [
@@ -168,7 +168,7 @@ export function ExpenseDashboard() {
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   
-  const [expenseFilterCategory, setExpenseFilterCategory] = useState<Category["value"] | "all">("all");
+  const [expenseFilterCategory, setExpenseFilterCategory] = useState<number | "all">("all");
   const [expenseFilterYear, setExpenseFilterYear] = useState<string>("all");
   const [expenseFilterMonth, setExpenseFilterMonth] = useState<string>("all");
 
@@ -183,14 +183,14 @@ export function ExpenseDashboard() {
 
   const expenseFormSchema = useMemo(() => z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
-    category: z.enum(categories.map(c => c.value) as [string, ...string[]], {
+    category: z.coerce.number({
       required_error: "Por favor seleccione una categoría.",
     }),
     amount: z.coerce.number().positive("El monto debe ser un número positivo."),
     date: z.date({
       required_error: "Se requiere una fecha.",
     }),
-  }), [categories]);
+  }), []);
 
   const expenseForm = useForm<z.infer<typeof expenseFormSchema>>({
     resolver: zodResolver(expenseFormSchema),
@@ -246,7 +246,7 @@ export function ExpenseDashboard() {
     setIsCategorizing(true);
     try {
       const result = await autoCategorizeExpense({ description });
-      const validCategory = categories.find(c => c.value.toLowerCase() === result.category.toLowerCase());
+      const validCategory = categories.find(c => c.label.toLowerCase() === result.category.toLowerCase());
       if (validCategory) {
         expenseForm.setValue("category", validCategory.value);
         toast({
@@ -254,7 +254,10 @@ export function ExpenseDashboard() {
           description: `Gasto categorizado como ${validCategory.label} con ${Math.round(result.confidence * 100)}% de confianza.`,
         });
       } else {
-        expenseForm.setValue("category", "Other");
+        const otherCategory = categories.find(c => c.label.toLowerCase() === "otro");
+        if (otherCategory) {
+            expenseForm.setValue("category", otherCategory.value);
+        }
          toast({
           title: "Sugerencia: Otro",
           description: `No estábamos seguros, así que hemos sugerido "Otro". La IA sugirió "${result.category}".`,
@@ -275,13 +278,13 @@ export function ExpenseDashboard() {
 
   useEffect(() => {
     const mockExpenses: Expense[] = [
-        { id: "1", name: "Compras", category: "Food", amount: 75.50, date: new Date(2024, 5, 2) },
-        { id: "2", name: "Gasolina", category: "Transport", amount: 40.00, date: new Date(2024, 5, 5) },
-        { id: "3", name: "Alquiler Mensual", category: "Rent", amount: 1200.00, date: new Date(2024, 5, 1) },
-        { id: "4", name: "Factura de Electricidad", category: "Utilities", amount: 65.20, date: new Date(2024, 5, 10) },
-        { id: "5", name: "Entradas de cine", category: "Entertainment", amount: 25.00, date: new Date(2024, 5, 12) },
-        { id: "6", name: "Cena fuera", category: "Food", amount: 55.00, date: new Date(2024, 5, 15) },
-        { id: "7", name: "Factura de Internet", category: "Utilities", amount: 50.00, date: new Date(2024, 5, 20) },
+        { id: "1", name: "Compras", category: 1, amount: 75.50, date: new Date(2024, 5, 2) },
+        { id: "2", name: "Gasolina", category: 2, amount: 40.00, date: new Date(2024, 5, 5) },
+        { id: "3", name: "Alquiler Mensual", category: 3, amount: 1200.00, date: new Date(2024, 5, 1) },
+        { id: "4", name: "Factura de Electricidad", category: 4, amount: 65.20, date: new Date(2024, 5, 10) },
+        { id: "5", name: "Entradas de cine", category: 5, amount: 25.00, date: new Date(2024, 5, 12) },
+        { id: "6", name: "Cena fuera", category: 1, amount: 55.00, date: new Date(2024, 5, 15) },
+        { id: "7", name: "Factura de Internet", category: 4, amount: 50.00, date: new Date(2024, 5, 20) },
       ];
       setExpenses(mockExpenses);
 
@@ -323,7 +326,7 @@ export function ExpenseDashboard() {
   const onCategorySubmit = (values: z.infer<typeof categoryFormSchema>) => {
     const IconComponent = availableIcons.find(icon => icon.name === values.icon)?.component || CircleDollarSign;
     const newCategory: Category = {
-        value: values.label,
+        value: new Date().getTime(), // Unique numeric ID
         label: values.label,
         icon: IconComponent
     };
@@ -616,7 +619,7 @@ export function ExpenseDashboard() {
                         <FormItem>
                           <FormLabel>Categoría</FormLabel>
                           <div className="flex items-center gap-2">
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Seleccione una categoría" />
@@ -624,7 +627,7 @@ export function ExpenseDashboard() {
                             </FormControl>
                             <SelectContent>
                               {categories.map(cat => (
-                                <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                                <SelectItem key={cat.value} value={cat.value.toString()}>{cat.label}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -845,14 +848,14 @@ export function ExpenseDashboard() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Select value={expenseFilterCategory} onValueChange={(value) => setExpenseFilterCategory(value as Category["value"] | "all")}>
+                    <Select value={expenseFilterCategory.toString()} onValueChange={(value) => setExpenseFilterCategory(value === "all" ? "all" : parseInt(value))}>
                         <SelectTrigger className="w-auto h-8">
                         <SelectValue placeholder="Filtrar por categoría" />
                         </SelectTrigger>
                         <SelectContent>
                         <SelectItem value="all">Todas las Categorías</SelectItem>
                         {categories.map(cat => (
-                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                            <SelectItem key={cat.value} value={cat.value.toString()}>{cat.label}</SelectItem>
                         ))}
                         </SelectContent>
                     </Select>

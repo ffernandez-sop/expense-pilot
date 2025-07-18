@@ -315,7 +315,12 @@ export function ExpenseDashboard() {
       throw new Error("La respuesta del servidor no fue OK");
     }
 
-    const savedExpense: Expense = await response.json(); 
+    const savedExpenseData = await response.json(); 
+    const savedExpense: Expense = {
+      ...savedExpenseData,
+      date: new Date(savedExpenseData.date),
+    };
+    
     setExpenses(prev => [savedExpense, ...prev]);
 
     toast({

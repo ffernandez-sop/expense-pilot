@@ -196,7 +196,7 @@ export function ExpenseDashboard() {
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
       name: "",
-      amount: undefined,
+      amount: '' as unknown as number,
       date: new Date(),
     },
   });
@@ -205,7 +205,7 @@ export function ExpenseDashboard() {
     resolver: zodResolver(incomeFormSchema),
     defaultValues: {
       source: "",
-      amount: undefined,
+      amount: '' as unknown as number,
       date: new Date(),
     },
   });
@@ -352,7 +352,7 @@ export function ExpenseDashboard() {
       title: "Ingreso Agregado",
       description: `Ingreso de ${values.source} por $${values.amount} ha sido agregado.`,
     });
-    incomeForm.reset({ source: "", amount: undefined, date: new Date() });
+    incomeForm.reset({ source: "", amount: '' as unknown as number, date: new Date() });
     setIncomeSheetOpen(false);
   };
 
@@ -996,3 +996,5 @@ export function ExpenseDashboard() {
     </>
   );
 }
+
+    

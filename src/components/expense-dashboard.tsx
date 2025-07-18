@@ -295,47 +295,47 @@ export function ExpenseDashboard() {
       setIncomes(mockIncomes);
   }, []);
 
-  const onExpenseSubmit = async (values: z.infer<typeof expenseFormSchema>) => {
-    const newExpense: Expense = {
-      id: new Date().toISOString(),
-      ...values,
-    };
+ const onExpenseSubmit = async (values: z.infer<typeof expenseFormSchema>) => {
+  try {
+    const response = await fetch("http://localhost:8080/api/v1/register-expense", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify({
+        name: values.name,
+        categoryId: values.category,
+        amount: values.amount,
+        date: values.date.toISOString().split("T")[0],
+      }),
+    });
 
-    try {
-      const response = await fetch("http://localhost:8080/api/v1/register-expense", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: values.name,
-          category: values.category,
-          amount: values.amount,
-          date: values.date.toISOString(), 
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("La respuesta del servidor no fue OK");
-      }
-
-      setExpenses(prev => [newExpense, ...prev]);
-      toast({
-        title: "Gasto Registrado",
-        description: `${values.name} por $${values.amount} ha sido registrado exitosamente.`,
-      });
-      expenseForm.reset();
-      setExpenseSheetOpen(false);
-
-    } catch (error) {
-      console.error("Error al registrar el gasto:", error);
-      toast({
-        variant: "destructive",
-        title: "Error al Registrar",
-        description: "No se pudo registrar el gasto. Por favor, inténtelo de nuevo.",
-      });
+    if (!response.ok) {
+      throw new Error("La respuesta del servidor no fue OK");
     }
-  };
+
+    const savedExpense: Expense = await response.json(); 
+    setExpenses(prev => [savedExpense, ...prev]);
+
+    toast({
+      title: "Gasto Registrado",
+      description: `${savedExpense.name} por $${savedExpense.amount} ha sido registrado exitosamente.`,
+    });
+
+    expenseForm.reset();
+    setExpenseSheetOpen(false);
+
+  } catch (error) {
+    console.error("Error al registrar el gasto:", error);
+    toast({
+      variant: "destructive",
+      title: "Error al Registrar",
+      description: "No se pudo registrar el gasto. Por favor, inténtelo de nuevo.",
+    });
+  }
+};
+
 
   const onIncomeSubmit = (values: z.infer<typeof incomeFormSchema>) => {
     const newIncome: Income = {

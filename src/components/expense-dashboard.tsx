@@ -197,7 +197,6 @@ export function ExpenseDashboard() {
     defaultValues: {
       name: "",
       amount: '' as unknown as number,
-      date: new Date(),
     },
   });
   
@@ -206,7 +205,6 @@ export function ExpenseDashboard() {
     defaultValues: {
       source: "",
       amount: '' as unknown as number,
-      date: new Date(),
     },
   });
   
@@ -328,7 +326,7 @@ export function ExpenseDashboard() {
       description: `${savedExpense.name} por $${savedExpense.amount} ha sido registrado exitosamente.`,
     });
 
-    expenseForm.reset();
+    expenseForm.reset({name: "", amount: '' as unknown as number, date: new Date()});
     setExpenseSheetOpen(false);
 
   } catch (error) {
@@ -908,8 +906,9 @@ export function ExpenseDashboard() {
                 <TableBody>
                     {tableFilteredExpenses.length > 0 ? (
                     tableFilteredExpenses.map(expense => {
-                        const CategoryIcon = categories.find(c => c.value === expense.category)?.icon || CircleDollarSign;
-                        const categoryLabel = categories.find(c => c.value === expense.category)?.label || expense.category;
+                        const category = categories.find(c => c.value === expense.category);
+                        const CategoryIcon = category?.icon || CircleDollarSign;
+                        const categoryLabel = category?.label || 'Desconocida';
                         return (
                         <TableRow key={expense.id}>
                             <TableCell className="font-medium">{expense.name}</TableCell>
@@ -996,5 +995,3 @@ export function ExpenseDashboard() {
     </>
   );
 }
-
-    

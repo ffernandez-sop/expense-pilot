@@ -295,18 +295,46 @@ export function ExpenseDashboard() {
       setIncomes(mockIncomes);
   }, []);
 
-  const onExpenseSubmit = (values: z.infer<typeof expenseFormSchema>) => {
+  const onExpenseSubmit = async (values: z.infer<typeof expenseFormSchema>) => {
     const newExpense: Expense = {
       id: new Date().toISOString(),
       ...values,
     };
-    setExpenses(prev => [newExpense, ...prev]);
-    toast({
-      title: "Gasto Agregado",
-      description: `${values.name} por $${values.amount} ha sido agregado.`,
-    });
-    expenseForm.reset();
-    setExpenseSheetOpen(false);
+
+    try {
+      const response = await fetch("http://localhost:8080/api/v1/register-expense", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: values.name,
+          category: values.category,
+          amount: values.amount,
+          date: values.date.toISOString(), 
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("La respuesta del servidor no fue OK");
+      }
+
+      setExpenses(prev => [newExpense, ...prev]);
+      toast({
+        title: "Gasto Registrado",
+        description: `${values.name} por $${values.amount} ha sido registrado exitosamente.`,
+      });
+      expenseForm.reset();
+      setExpenseSheetOpen(false);
+
+    } catch (error) {
+      console.error("Error al registrar el gasto:", error);
+      toast({
+        variant: "destructive",
+        title: "Error al Registrar",
+        description: "No se pudo registrar el gasto. Por favor, inténtelo de nuevo.",
+      });
+    }
   };
 
   const onIncomeSubmit = (values: z.infer<typeof incomeFormSchema>) => {
@@ -403,7 +431,7 @@ export function ExpenseDashboard() {
     expenses: {
       label: "Gastos",
     },
-    ...Object.fromEntries(categories.map((cat, i) => [cat.value, { label: cat.label, color: chartColors[i % chartColors.length] }]))
+    ...Object.fromEntries(categories.map((cat, i) => [cat.value.toString(), { label: cat.label, color: chartColors[i % chartColors.length] }]))
   };
 
 

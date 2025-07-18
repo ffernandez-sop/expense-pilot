@@ -919,7 +919,7 @@ export function ExpenseDashboard() {
                                 {categoryLabel}
                             </div>
                             </TableCell>
-                            <TableCell className="text-right">${expense.amount.toFixed(2)}</TableCell>
+                            <TableCell className="text-right">${(expense.amount ?? 0).toFixed(2)}</TableCell>
                             <TableCell className="hidden md:table-cell">{format(expense.date, 'PPP', { locale: es })}</TableCell>
                         </TableRow>
                         );
@@ -977,7 +977,7 @@ export function ExpenseDashboard() {
                             return (
                             <TableRow key={income.id}>
                                 <TableCell className="font-medium">{income.source}</TableCell>
-                                <TableCell className="text-right">${income.amount.toFixed(2)}</TableCell>
+                                <TableCell className="text-right">${(income.amount ?? 0).toFixed(2)}</TableCell>
                                 <TableCell className="hidden md:table-cell">{format(income.date, 'PPP', { locale: es })}</TableCell>
                             </TableRow>
                             );

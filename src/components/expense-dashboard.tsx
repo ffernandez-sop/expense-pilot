@@ -286,10 +286,7 @@ export function ExpenseDashboard() {
       ];
       setExpenses(mockExpenses);
 
-      const mockIncomes: Income[] = [
-        { id: "income-1", source: "Salario", amount: 5000, date: new Date(2024, 5, 1) },
-        { id: "income-2", source: "Freelance", amount: 750, date: new Date(2024, 4, 15) },
-      ];
+      const mockIncomes: Income[] = [];
       setIncomes(mockIncomes);
   }, []);
 
@@ -315,7 +312,10 @@ export function ExpenseDashboard() {
 
     const savedExpenseData = await response.json(); 
     const savedExpense: Expense = {
-      ...savedExpenseData,
+      id: savedExpenseData.id,
+      name: savedExpenseData.name,
+      category: savedExpenseData.category.id,
+      amount: savedExpenseData.amount,
       date: new Date(savedExpenseData.date),
     };
     
@@ -340,19 +340,57 @@ export function ExpenseDashboard() {
 };
 
 
-  const onIncomeSubmit = (values: z.infer<typeof incomeFormSchema>) => {
+  const onIncomeSubmit = async (values: z.infer<typeof incomeFormSchema>) => {
+  try {
+    const res = await fetch("http://localhost:8080/api/v1/register-income", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify({
+        source: values.source,
+        amount: values.amount,
+        date: values.date.toISOString().split("T")[0],
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Error al registrar el ingreso");
+    }
+
+    const data: Income = await res.json();
+
     const newIncome: Income = {
-      id: new Date().toISOString(),
+      id: data.id, // Usa el ID real si viene del backend
       ...values,
     };
+
     setIncomes(prev => [newIncome, ...prev]);
+
     toast({
       title: "Ingreso Agregado",
       description: `Ingreso de ${values.source} por $${values.amount} ha sido agregado.`,
     });
-    incomeForm.reset({ source: "", amount: '' as unknown as number, date: new Date() });
+
+    incomeForm.reset({
+      source: "",
+      amount: '' as unknown as number,
+      date: new Date(),
+    });
+
     setIncomeSheetOpen(false);
-  };
+
+  } catch (error) {
+    console.error(error);
+    toast({
+      title: "Error",
+      description: "No se pudo registrar el ingreso. Intenta de nuevo.",
+      variant: "destructive",
+    });
+  }
+};
+
 
   const onCategorySubmit = (values: z.infer<typeof categoryFormSchema>) => {
     const IconComponent = availableIcons.find(icon => icon.name === values.icon)?.component || CircleDollarSign;
@@ -780,7 +818,11 @@ export function ExpenseDashboard() {
                 </DropdownMenuPortal>
               </DropdownMenuSub>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push('/')}>
+              <DropdownMenuItem onClick={() => {
+                localStorage.removeItem('token')
+                router.push('/')
+                
+                }}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Salir</span>
               </DropdownMenuItem>

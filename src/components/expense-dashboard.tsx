@@ -1,6 +1,6 @@
 
 "use client";
-
+import { parse } from 'date-fns';
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -275,20 +275,63 @@ export function ExpenseDashboard() {
 
 
   useEffect(() => {
-    const mockExpenses: Expense[] = [
-        { id: "1", name: "Compras", category: 1, amount: 75.50, date: new Date(2024, 5, 2) },
-        { id: "2", name: "Gasolina", category: 2, amount: 40.00, date: new Date(2024, 5, 5) },
-        { id: "3", name: "Alquiler Mensual", category: 3, amount: 1200.00, date: new Date(2024, 5, 1) },
-        { id: "4", name: "Factura de Electricidad", category: 4, amount: 65.20, date: new Date(2024, 5, 10) },
-        { id: "5", name: "Entradas de cine", category: 5, amount: 25.00, date: new Date(2024, 5, 12) },
-        { id: "6", name: "Cena fuera", category: 1, amount: 55.00, date: new Date(2024, 5, 15) },
-        { id: "7", name: "Factura de Internet", category: 4, amount: 50.00, date: new Date(2024, 5, 20) },
-      ];
-      setExpenses(mockExpenses);
-
-      const mockIncomes: Income[] = [];
-      setIncomes(mockIncomes);
+      getAllExpenses();
+      getAllIncomes();  
   }, []);
+
+const getAllExpenses = async () => {
+  try {
+    const response = await fetch("http://localhost:8080/api/v1/expenses", {
+      headers: {
+        method: "GET",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Error al obtener los gastos");
+    }
+
+    const data = await response.json();
+     
+    const dataFormatExpenses: Expense[] = data.map((expense: any) => ({
+      id: expense.id,
+      name: expense.name,
+      category: expense.category.id,
+      amount: expense.amount,
+      date: parse(expense.date, 'yyyy-MM-dd', new Date()),
+    }));
+    setExpenses(dataFormatExpenses);
+  } catch (error) {
+    console.error(error);
+  }
+};
+const getAllIncomes = async () => {
+  try {
+    const response = await fetch("http://localhost:8080/api/v1/incomes", {
+      headers: {
+        method: "GET",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al obtener los ingresos");
+    }
+
+    const data = await response.json();
+    const dataFormatIncomes: Income[] = data.map((income: any) => ({
+      id: income.id,
+      source: income.source,
+      amount: income.amount,
+      date: parse(income.date, 'yyyy-MM-dd', new Date()),
+    }));
+    setIncomes(dataFormatIncomes);
+  } catch (error) {
+    console.error(error);
+  }
+};
 
  const onExpenseSubmit = async (values: z.infer<typeof expenseFormSchema>) => {
   try {
@@ -316,7 +359,7 @@ export function ExpenseDashboard() {
       name: savedExpenseData.name,
       category: savedExpenseData.category.id,
       amount: savedExpenseData.amount,
-      date: new Date(savedExpenseData.date),
+      date: parse(savedExpenseData.date, 'yyyy-MM-dd', new Date()),
     };
     
     setExpenses(prev => [savedExpense, ...prev]);

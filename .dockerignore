@@ -1,0 +1,26 @@
+# Dependencias
+node_modules
+npm-debug.log
+
+# Build
+.next/
+out/
+build/
+
+# Archivos de entorno
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Git y Docker
+.git
+.gitignore
+.dockerignore
+Dockerfile
+
+# VSCode y otros
+.vscode/
+README.md
+apphosting.yaml
+components.json

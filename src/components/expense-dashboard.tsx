@@ -144,8 +144,8 @@ const incomeMonths = [
     { value: "7", label: "Agosto" },
     { value: "8", label: "Septiembre" },
     { value: "9", label: "Octubre" },
-    { value: "10", label: "Noviembre" },
-    { value: "11", label: "Diciembre" },
+    { value: "10", "label": "Noviembre" },
+    { value: "11", "label": "Diciembre" },
 ];
 
 const incomeFormSchema = z.object({
@@ -405,7 +405,7 @@ const getAllIncomes = async () => {
     const data: Income = await res.json();
 
     const newIncome: Income = {
-      id: data.id, // Usa el ID real si viene del backend
+      id: data.id, 
       ...values,
     };
 
@@ -438,7 +438,7 @@ const getAllIncomes = async () => {
   const onCategorySubmit = (values: z.infer<typeof categoryFormSchema>) => {
     const IconComponent = availableIcons.find(icon => icon.name === values.icon)?.component || CircleDollarSign;
     const newCategory: Category = {
-        value: new Date().getTime(), // Unique numeric ID
+        value: new Date().getTime(),
         label: values.label,
         icon: IconComponent
     };
@@ -473,21 +473,6 @@ const getAllIncomes = async () => {
     return ["all", ...years];
   }, [incomes]);
 
-  const timeFilteredExpenses = useMemo(() => {
-    return expenses.filter(expense => {
-      const yearMatch = expenseFilterYear === "all" || expense.date.getFullYear().toString() === expenseFilterYear;
-      const monthMatch = expenseFilterMonth === "all" || expense.date.getMonth().toString() === expenseFilterMonth;
-      return yearMatch && monthMatch;
-    });
-  }, [expenses, expenseFilterYear, expenseFilterMonth]);
-
-  const tableFilteredExpenses = useMemo(() => {
-    return timeFilteredExpenses.filter(expense => {
-      const categoryMatch = expenseFilterCategory === "all" || expense.category === expenseFilterCategory;
-      return categoryMatch;
-    });
-  }, [timeFilteredExpenses, expenseFilterCategory]);
-
   const filteredIncomes = useMemo(() => {
       return incomes.filter(income => {
           const yearMatch = incomeFilterYear === "all" || income.date.getFullYear().toString() === incomeFilterYear;
@@ -496,19 +481,49 @@ const getAllIncomes = async () => {
       });
   }, [incomes, incomeFilterYear, incomeFilterMonth]);
   
-  const totalExpenses = useMemo(() => timeFilteredExpenses.reduce((sum, expense) => sum + expense.amount, 0), [timeFilteredExpenses]);
   const totalIncome = useMemo(() => filteredIncomes.reduce((sum, income) => sum + income.amount, 0), [filteredIncomes]);
+
+  const processedExpenses = useMemo(() => {
+    const timeFilteredExpenses = expenses.filter(expense => {
+      const yearMatch = expenseFilterYear === "all" || expense.date.getFullYear().toString() === expenseFilterYear;
+      const monthMatch = expenseFilterMonth === "all" || expense.date.getMonth().toString() === expenseFilterMonth;
+      return yearMatch && monthMatch;
+    });
+
+    const tableFilteredExpenses = timeFilteredExpenses.filter(expense => {
+      return expenseFilterCategory === "all" || expense.category === expenseFilterCategory;
+    });
+
+    let totalExpenses = 0;
+    const categoryTotals: { [key: number]: number } = {};
+
+    for (const expense of timeFilteredExpenses) {
+      totalExpenses += expense.amount;
+      if (categoryTotals[expense.category]) {
+        categoryTotals[expense.category] += expense.amount;
+      } else {
+        categoryTotals[expense.category] = expense.amount;
+      }
+    }
+
+    const chartData = Object.entries(categoryTotals).map(([catId, total]) => {
+      const category = categories.find(c => c.value === parseInt(catId));
+      return {
+        name: category?.label || 'Desconocido',
+        value: total,
+      };
+    }).filter(item => item.value > 0);
+
+    return {
+      tableFilteredExpenses,
+      totalExpenses,
+      chartData,
+    };
+  }, [expenses, expenseFilterYear, expenseFilterMonth, expenseFilterCategory, categories]);
+
+  const { tableFilteredExpenses, totalExpenses, chartData } = processedExpenses;
   const balance = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
 
-  const chartData = useMemo(() => {
-    return categories.map(category => ({
-      name: category.label,
-      value: timeFilteredExpenses
-        .filter(e => e.category === category.value)
-        .reduce((sum, e) => sum + e.amount, 0),
-    })).filter(item => item.value > 0);
-  }, [timeFilteredExpenses, categories]);
-  
   const chartColors = ["#3b82f6", "#ffb347", "#10b981", "#8b5cf6", "#ec4899", "#f97316", "#fde047", "#a3e635", "#22d3ee", "#e879f9" ];
 
   const chartConfig = {

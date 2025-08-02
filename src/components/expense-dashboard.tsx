@@ -102,14 +102,7 @@ import type { Expense, Category, Income } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { autoCategorizeExpense } from "@/ai/flows/categorize-expense";
 
-const initialCategories: Category[] = [
-  { value: 1, label: "Comida", icon: Utensils },
-  { value: 2, label: "Transporte", icon: Car },
-  { value: 3, label: "Alquiler", icon: Home },
-  { value: 4, label: "Servicios", icon: Bolt },
-  { value: 5, label: "Entretenimiento", icon: Film },
-  { value: 6, label: "Otro", icon: CircleDollarSign },
-];
+const initialCategories: Category[] = [];
 
 const availableIcons = [
     { name: "Utensils", component: Utensils, label: "Comida" },
@@ -166,7 +159,7 @@ export function ExpenseDashboard() {
   const { setTheme } = useTheme();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
   
   const [expenseFilterCategory, setExpenseFilterCategory] = useState<number | "all">("all");
   const [expenseFilterYear, setExpenseFilterYear] = useState<string>("all");
@@ -277,11 +270,36 @@ export function ExpenseDashboard() {
   useEffect(() => {
       getAllExpenses();
       getAllIncomes();  
+      getAllCategory();
   }, []);
+
+  const getAllCategory = async () => {
+    try {
+      const response = await fetch("http://localhost:8081/api/v1/categorys", {
+        method: "GET",
+        headers: {
+              "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+      },
+      });
+      if (!response.ok) {
+        throw new Error("Error al obtener las categorías");
+      }
+      const data = await response.json();
+      const formattedCategories: Category[] = data.map((cat: any) => ({
+        value: cat.id,
+        label: cat.name,
+        icon: availableIcons.find(icon => icon.name === cat.icon)?.component || CircleDollarSign,
+      }));
+      setCategories(formattedCategories);
+    } catch (error) {
+      console.error(error);
+    }
+};
 
 const getAllExpenses = async () => {
   try {
-    const response = await fetch("http://localhost:8080/api/v1/expenses", {
+    const response = await fetch("http://localhost:8081/api/v1/expenses", {
       headers: {
         method: "GET",
         "Content-Type": "application/json",
@@ -308,7 +326,7 @@ const getAllExpenses = async () => {
 };
 const getAllIncomes = async () => {
   try {
-    const response = await fetch("http://localhost:8080/api/v1/incomes", {
+    const response = await fetch("http://localhost:8081/api/v1/incomes", {
       headers: {
         method: "GET",
         "Content-Type": "application/json",
@@ -335,7 +353,7 @@ const getAllIncomes = async () => {
 
  const onExpenseSubmit = async (values: z.infer<typeof expenseFormSchema>) => {
   try {
-    const response = await fetch("http://localhost:8080/api/v1/register-expense", {
+    const response = await fetch("http://localhost:8081/api/v1/register-expense", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -385,7 +403,7 @@ const getAllIncomes = async () => {
 
   const onIncomeSubmit = async (values: z.infer<typeof incomeFormSchema>) => {
   try {
-    const res = await fetch("http://localhost:8080/api/v1/register-income", {
+    const res = await fetch("http://localhost:8081/api/v1/register-income", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

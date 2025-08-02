@@ -5,7 +5,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: web
     ports:
-      - "9002:3000"
-    environment:
-      - NODE_ENV=production
+      - "3000:3000"
+    networks:
+      - expanse-network
+
+networks:
+  expanse-network:
+    external: true
